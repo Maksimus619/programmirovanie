@@ -71,9 +71,9 @@ int main()
     FILE *unfp;
     fp = fopen("compressed.dat", "wb");
     unfp = fopen("uncompressed.dat", "wb");
-    for (int i = 0; i < 1000000; i++)
+    for (int i = 0; i < 1; i++)
     {
-        uint32_t number = generate_number();
+        uint32_t number = 0x3579b;
         fwrite(&number, sizeof(uint32_t), 1, unfp);
         uint8_t buf[4];
         size = encode_varint(number, buf);
