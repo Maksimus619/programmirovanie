@@ -4,18 +4,18 @@
 	width: 1000px;
 	margin: 0 auto;
 }
-.text1(
+.text1{
 	text-align: center;
 	color: black;
 }
 
-.text2(
+.text2{
 	text-align: center;
 	color: blue;
 	margin: 48px 4px 0px 0px;
 }
 
-.ptext(
+.ptext{
 	background-color: white;
 	text-align: center;
 	margin: 0 auto;
