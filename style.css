@@ -17,8 +17,9 @@
 
 .ptext{
 	background-color: white;
-	text-align: center;
+	text-indent: 5em;
+	text-align: width;
 	margin: 0 auto;
 	width: 800px;
-	border-right: 5px double blue
+	border-right: 5px double blue;
 }
