@@ -3,3 +3,32 @@
 	height: 100px;
 	width: 1580px;
 }
+.header__menu{
+	background-color: Gray;
+	height: 30px;
+	width: 1580px;
+}
+.info{
+	display:flex;
+	justify-content:center;
+	align-items: center;
+	flex-deriction: column;
+	margin-top: 77px
+	height: 100%;
+}
+.info__form {
+	display: flex;
+	justify-content: center;
+	flex-deriction: column;
+	margin-top: 50px
+	height: 100%;
+}
+.header__gl{
+	background-color: Gray;
+	height: 800px;
+	width: 1580px;
+.knopka__katalog{
+	background-color: white;
+	height: 30px;
+	width: 200px;
+}
