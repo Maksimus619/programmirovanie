@@ -1,34 +1,38 @@
-.header{
-	background-color: #7FFFD4;
-	height: 100px;
-	width: 1580px;
+.header {
+background-color: #7FFFD4;
+width: 100%;
+display: flex;
+flex-direction: column;
 }
-.header__menu{
-	background-color: Gray;
-	height: 30px;
-	width: 1580px;
+
+.header__menu {
+background-color: Gray;
+height: 30px;
+width: 100%;
+display: flex;
 }
-.info{
-	display:flex;
-	justify-content:center;
-	align-items: center;
-	flex-deriction: column;
-	margin-top: 77px
-	height: 100%;
+
+.header__gl {
+background-image: url('fon.jpg');
+background-size: cover;
+height: 800px;
+width: 100%;
 }
-.info__form {
-	display: flex;
-	justify-content: center;
-	flex-deriction: column;
-	margin-top: 50px
-	height: 100%;
+
+.knopka__katalog {
+background: none;
+border: none;
+cursor: pointer;
 }
-.header__gl{
-	background-color: Gray;
-	height: 800px;
-	width: 1580px;
-.knopka__katalog{
-	background-color: white;
-	height: 30px;
-	width: 200px;
+
+.header__logoname {
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.header__menu button {
+	background: none;
+	border: none;
+	cursor: pointer;
+	flex: 1;
 }
