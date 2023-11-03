@@ -1,0 +1,68 @@
+﻿.header {
+	background-color: white;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.header__gl {
+	background-image: url('fon.jpg');
+	background-size: cover;
+	height: 800px;
+	width: 100%;
+}
+
+.knopka__katalog {
+	background: #556B2F;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	transition: transform 0.2s;
+	width: 300px;
+	height: 30px;
+}
+
+.knopka__katalog:hover {
+	transform: scale(1.1);
+}
+
+
+.header__logoname {
+	text-align: left;
+}
+.header__menu {
+	background-color: Gray;
+	height: 30px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+
+.header__menu button {
+	background: none;
+	border: none;
+	cursor: pointer;
+	margin-right: 10px;
+}
+.text_big{
+	margin: 5% 10%;
+}
+.text__podbig{
+	margin: 5% 10%;
+}
+.heade__name{
+
+}
+.header__logo{
+	text-align: center;
+}
+.bodys{
+	width: 100%;
+	background-color: white;
+}
+.text_bigbody{
+	text-align: center;
+}
+.text__podbody{
+
+}
