@@ -5,56 +5,82 @@ html
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
-  <title>Фото-слайдер</title>
+  <title>Слайдер</title>
 </head>
 <body>
-  <div class="slider-container">
-    <div class="slider">
-      <img src="image1.jpg" alt="Фото 1">
-      <img src="image2.jpg" alt="Фото 2">
-      <img src="image3.jpg" alt="Фото 3">
-    </div>
-  </div>
 
-  <script src="script.js"></script>
+<div class="slider-container">
+  <div class="slider">
+    <img src="image1.jpg" alt="Изображение 1">
+    <img src="image2.jpg" alt="Изображение 2">
+    <img src="image3.jpg" alt="Изображение 3">
+  </div>
+  <button class="prev-btn" onclick="changeSlide(-1)">&#10094;</button>
+  <button class="next-btn" onclick="changeSlide(1)">&#10095;</button>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
 
-js
-document.addEventListener("DOMContentLoaded", function() {
-  const slider = document.querySelector(".slider");
-  let counter = 1;
-
-  function slide() {
-    slider.style.transform = "translateX(" + (-counter * 100) + "%)";
-  }
-
-  setInterval(function() {
-    counter++;
-    if (counter >= 3) {
-      counter = 0;
-    }
-    slide();
-  }, 3000);
-});
-
 css
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
 }
 
 .slider-container {
-  width: 100%;
-  overflow: hidden;
+  position: relative;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .slider {
   display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+img {
+  width: 100%;
   transition: transform 0.5s ease-in-out;
 }
 
-.slider img {
-  width: 100%;
-  height: auto;
+.prev-btn,
+.next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
+
+.prev-btn {
+  left: 10px;
+}
+
+.next-btn {
+  right: 10px;
+}
+
+js
+
+let currentSlide = 0;
+
+function showSlide(index) {
+  const slider = document.querySelector('.slider');
+  const slides = document.querySelectorAll('.slider img');
+  const totalSlides = slides.length;
+
+  currentSlide = (index + totalSlides) % totalSlides;
+
+  slider.style.transform = `translateX(${-currentSlide * 100}%)`;
+}
+
+function changeSlide(direction) {
+  showSlide(currentSlide + direction);
+}
+
+// Auto slide change (optional)
+// setInterval(() => changeSlide(1), 3000);
