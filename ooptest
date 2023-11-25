@@ -1,0 +1,133 @@
+#include <SFML/Graphics.hpp>
+#include <iostream>
+
+class Figure {
+public:
+    Figure(char symbol) : symbol(symbol) {}
+    virtual ~Figure() {}
+
+    virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
+
+protected:
+    char symbol;
+};
+
+class Cross : public Figure {
+public:
+    Cross() : Figure('X') {}
+
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
+        sf::VertexArray cross(sf::Lines, 4);
+
+        float offset = 5.f;
+        cross[0].position = sf::Vector2f(col * cellSize + offset, row * cellSize + offset);
+        cross[1].position = sf::Vector2f((col + 1) * cellSize - offset, (row + 1) * cellSize - offset);
+
+        cross[2].position = sf::Vector2f(col * cellSize + offset, (row + 1) * cellSize - offset);
+        cross[3].position = sf::Vector2f((col + 1) * cellSize - offset, row * cellSize + offset);
+
+        for (int i = 0; i < 4; ++i)
+            cross[i].color = sf::Color::Red;
+
+        window.draw(cross);
+    }
+};
+
+class Circle : public Figure {
+public:
+    Circle() : Figure('O') {}
+
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
+        sf::CircleShape circle(cellSize / 2 - 5.f);
+        circle.setFillColor(sf::Color::Transparent);  // Сделайте центр нолика прозрачным
+        circle.setOutlineThickness(10.f);
+        circle.setOutlineColor(sf::Color::Blue);
+        circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
+
+        window.draw(circle);
+    }
+};
+
+class Board {
+public:
+    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)) {}
+
+    ~Board() {
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                delete cells[i][j];
+            }
+        }
+    }
+
+    void draw(sf::RenderWindow& window, float cellSize) const {
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                if (cells[i][j] != nullptr) {
+                    cells[i][j]->draw(window, i, j, cellSize);
+                }
+            }
+        }
+    }
+
+    bool makeMove(int row, int col, Figure* figure) {
+        if (cells[row][col] == nullptr) {
+            cells[row][col] = figure;
+            return true;
+        }
+        return false;
+    }
+
+    // Другие методы для проверки победы и т. д.
+    bool checkWin() const {
+        // Реализация проверки победы
+        // Ваш код здесь
+        return false;
+    }
+
+private:
+    int size;
+    std::vector<std::vector<Figure*>> cells;
+};
+
+int main() {
+    const int boardSize = 4; // Увеличьте размер игрового поля
+    const float cellSize = 120.f; // Увеличьте размер клетки
+
+    sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
+
+    Board board(boardSize);
+    Cross cross;
+    Circle circle;
+
+    bool isCrossTurn = true;
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                int col = event.mouseButton.x / cellSize;
+                int row = event.mouseButton.y / cellSize;
+
+                if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
+                    if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
+                        isCrossTurn = !isCrossTurn;
+                        if (board.checkWin()) {
+                            std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
+                            window.close();
+                        }
+                    }
+                }
+            }
+        }
+
+        window.clear();
+        board.draw(window, cellSize);
+        window.display();
+    }
+
+    return 0;
+}
