@@ -39,7 +39,7 @@ public:
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::CircleShape circle(cellSize / 2 - 5.f);
-        circle.setFillColor(sf::Color::Blue);
+        circle.setFillColor(sf::Color::Transparent);  // Сделайте центр нолика прозрачным
         circle.setOutlineThickness(10.f);
         circle.setOutlineColor(sf::Color::Blue);
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
@@ -70,8 +70,20 @@ public:
         }
     }
 
-    // Другие методы для обработки игровой логики, проверки победы и т. д.
-    // ...
+    bool makeMove(int row, int col, Figure* figure) {
+        if (cells[row][col] == nullptr) {
+            cells[row][col] = figure;
+            return true;
+        }
+        return false;
+    }
+
+    // Другие методы для проверки победы и т. д.
+    bool checkWin() const {
+        // Реализация проверки победы
+        // Ваш код здесь
+        return false;
+    }
 
 private:
     int size;
@@ -85,12 +97,31 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
 
     Board board(boardSize);
+    Cross cross;
+    Circle circle;
+
+    bool isCrossTurn = true;
 
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                int col = event.mouseButton.x / cellSize;
+                int row = event.mouseButton.y / cellSize;
+
+                if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
+                    if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
+                        isCrossTurn = !isCrossTurn;
+                        if (board.checkWin()) {
+                            std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
+                            window.close();
+                        }
+                    }
+                }
+            }
         }
 
         window.clear();
