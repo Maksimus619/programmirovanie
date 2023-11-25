@@ -39,7 +39,7 @@ public:
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::CircleShape circle(cellSize / 2 - 5.f);
-        circle.setFillColor(sf::Color::Blue);
+        circle.setFillColor(sf::Color::Transparent);  // Сделайте центр нолика прозрачным
         circle.setOutlineThickness(10.f);
         circle.setOutlineColor(sf::Color::Blue);
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
