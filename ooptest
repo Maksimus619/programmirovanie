@@ -8,6 +8,10 @@ public:
 
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
 
+    char getSymbol() const {
+        return symbol;
+    }
+
 protected:
     char symbol;
 };
@@ -100,13 +104,13 @@ private:
 
     // Вспомогательная функция для проверки выигрышных линий
     bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
-        char symbolToCheck = cells[startRow][startCol]->symbol;
+        char symbolToCheck = cells[startRow][startCol]->getSymbol();
 
         for (int i = 0; i < size; ++i) {
             int row = startRow + i * rowIncrement;
             int col = startCol + i * colIncrement;
 
-            if (cells[row][col] == nullptr || cells[row][col]->symbol != symbolToCheck) {
+            if (cells[row][col] == nullptr || cells[row][col]->getSymbol() != symbolToCheck) {
                 return false;
             }
         }
