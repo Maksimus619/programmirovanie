@@ -106,7 +106,7 @@ int main() {
     const int boardSize = 3;
     const float cellSize = 100.f;
 
-    sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
+    sf::RenderWindow window(sf::VideoMode(static_cast<int>(boardSize * cellSize), static_cast<int>(boardSize * cellSize)), "Tic Tac Toe");
 
     Board board(boardSize);
     Cross cross;
@@ -121,8 +121,8 @@ int main() {
                 window.close();
 
             if (event.type == sf::Event::MouseButtonPressed) {
-                int col = event.mouseButton.x / cellSize;
-                int row = event.mouseButton.y / cellSize;
+                int col = static_cast<int>(event.mouseButton.x / cellSize);
+                int row = static_cast<int>(event.mouseButton.y / cellSize);
 
                 if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
                     if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
