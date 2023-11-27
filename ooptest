@@ -38,8 +38,8 @@ public:
     Circle() : Figure('O') {}
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
-        sf::CircleShape circle(cellSize / 2 - 5.f);
-        circle.setFillColor(sf::Color::Transparent);  // Сделайте центр нолика прозрачным
+        sf::CircleShape circle(cellSize / 2 - 11.f);
+        circle.setFillColor(sf::Color::Transparent);  // центр прозрачный
         circle.setOutlineThickness(10.f);
         circle.setOutlineColor(sf::Color::Blue);
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
@@ -78,20 +78,45 @@ public:
         return false;
     }
 
-    // Другие методы для проверки победы и т. д.
     bool checkWin() const {
-        // Реализация проверки победы
-        // Ваш код здесь
+        // Проверка по горизонтали и вертикали
+        for (int i = 0; i < size; ++i) {
+            if (checkLine(i, 0, 0, 1) || checkLine(0, i, 1, 0)) {
+                return true;
+            }
+        }
+
+        // Проверка по диагоналям
+        if (checkLine(0, 0, 1, 1) || checkLine(0, size - 1, 1, -1)) {
+            return true;
+        }
+
         return false;
     }
 
 private:
     int size;
     std::vector<std::vector<Figure*>> cells;
+
+    // Вспомогательная функция для проверки выигрышных линий
+    bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
+        char symbolToCheck = cells[startRow][startCol]->symbol;
+
+        for (int i = 0; i < size; ++i) {
+            int row = startRow + i * rowIncrement;
+            int col = startCol + i * colIncrement;
+
+            if (cells[row][col] == nullptr || cells[row][col]->symbol != symbolToCheck) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 };
 
 int main() {
-    const int boardSize = 4; // Увеличьте размер игрового поля
+    const int boardSize = 3; // Увеличьте размер игрового поля
     const float cellSize = 120.f; // Увеличьте размер клетки
 
     sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
