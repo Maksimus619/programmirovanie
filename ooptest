@@ -7,6 +7,7 @@ public:
     virtual ~Figure() {}
 
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
+    char getSymbol() const { return symbol; }
 
 protected:
     char symbol;
@@ -82,15 +83,15 @@ public:
     bool checkWin() const {
         // Проверка по горизонтали и вертикали
         for (int i = 0; i < size; ++i) {
-            if ((cells[i][0] != nullptr && cells[i][0]->symbol == cells[i][1]->symbol && cells[i][1]->symbol == cells[i][2]->symbol) ||
-                (cells[0][i] != nullptr && cells[0][i]->symbol == cells[1][i]->symbol && cells[1][i]->symbol == cells[2][i]->symbol)) {
+            if ((cells[i][0] != nullptr && cells[i][0]->getSymbol() == cells[i][1]->getSymbol() && cells[i][1]->getSymbol() == cells[i][2]->getSymbol()) ||
+                (cells[0][i] != nullptr && cells[0][i]->getSymbol() == cells[1][i]->getSymbol() && cells[1][i]->getSymbol() == cells[2][i]->getSymbol())) {
                 return true;
             }
         }
 
         // Проверка по диагоналям
-        if ((cells[0][0] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol) ||
-            (cells[0][2] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol)) {
+        if ((cells[0][0] != nullptr && cells[0][0]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][2]->getSymbol()) ||
+            (cells[0][2] != nullptr && cells[0][2]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][0]->getSymbol())) {
             return true;
         }
 
