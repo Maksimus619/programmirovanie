@@ -38,8 +38,8 @@ public:
     Circle() : Figure('O') {}
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
-        sf::CircleShape circle(cellSize / 2 - 11.f);
-        circle.setFillColor(sf::Color::Transparent);  // центр прозрачный
+        sf::CircleShape circle(cellSize / 2 - 5.f);
+        circle.setFillColor(sf::Color::Blue);
         circle.setOutlineThickness(10.f);
         circle.setOutlineColor(sf::Color::Blue);
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
@@ -78,44 +78,19 @@ public:
         return false;
     }
 
+    // Метод для проверки победы
     bool checkWin() const {
         // Проверка по горизонтали и вертикали
         for (int i = 0; i < size; ++i) {
-            if (cells[i][0] != nullptr) {
-                bool horizontalWin = true;
-                bool verticalWin = true;
-
-                for (int j = 1; j < size; ++j) {
-                    if (cells[i][j] == nullptr || cells[i][j]->symbol != cells[i][0]->symbol) {
-                        horizontalWin = false;
-                    }
-
-                    if (cells[j][i] == nullptr || cells[j][i]->symbol != cells[0][i]->symbol) {
-                        verticalWin = false;
-                    }
-                }
-
-                if (horizontalWin || verticalWin) {
-                    return true;
-                }
+            if ((cells[i][0] != nullptr && cells[i][0]->symbol == cells[i][1]->symbol && cells[i][1]->symbol == cells[i][2]->symbol) ||
+                (cells[0][i] != nullptr && cells[0][i]->symbol == cells[1][i]->symbol && cells[1][i]->symbol == cells[2][i]->symbol)) {
+                return true;
             }
         }
 
-        // Проверка по диагонали
-        bool diagonal1Win = true;
-        bool diagonal2Win = true;
-
-        for (int i = 1; i < size; ++i) {
-            if (cells[i][i] == nullptr || cells[i][i]->symbol != cells[0][0]->symbol) {
-                diagonal1Win = false;
-            }
-
-            if (cells[i][size - 1 - i] == nullptr || cells[i][size - 1 - i]->symbol != cells[0][size - 1]->symbol) {
-                diagonal2Win = false;
-            }
-        }
-
-        if (diagonal1Win || diagonal2Win) {
+        // Проверка по диагоналям
+        if ((cells[0][0] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol) ||
+            (cells[0][2] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol)) {
             return true;
         }
 
@@ -128,8 +103,8 @@ private:
 };
 
 int main() {
-    const int boardSize = 3; // Увеличьте размер игрового поля
-    const float cellSize = 120.f; // Увеличьте размер клетки
+    const int boardSize = 3;
+    const float cellSize = 100.f;
 
     sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
 
