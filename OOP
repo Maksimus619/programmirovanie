@@ -38,8 +38,8 @@ public:
     Circle() : Figure('O') {}
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
-        sf::CircleShape circle(cellSize / 2 - 5.f);
-        circle.setFillColor(sf::Color::Transparent);  // Сделайте центр нолика прозрачным
+        sf::CircleShape circle(cellSize / 2 - 11.f);
+        circle.setFillColor(sf::Color::Transparent);  // центр прозрачный
         circle.setOutlineThickness(10.f);
         circle.setOutlineColor(sf::Color::Blue);
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
@@ -91,8 +91,8 @@ private:
 };
 
 int main() {
-    const int boardSize = 3;
-    const float cellSize = 100.f;
+    const int boardSize = 3; // Увеличьте размер игрового поля
+    const float cellSize = 120.f; // Увеличьте размер клетки
 
     sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
 
