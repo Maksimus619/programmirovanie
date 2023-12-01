@@ -1,98 +1,10 @@
-html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Слайдер</title>
-</head>
-<body>
-
-<div class="slider-container">
-  <div class="slider">
-    <div class="slide">
-      <img src="image1.jpg" alt="Изображение 1">
-    </div>
-    <div class="slide">
-      <img src="image2.jpg" alt="Изображение 2">
-    </div>
-    <div class="slide">
-      <img src="image3.jpg" alt="Изображение 3">
-    </div>
-  </div>
-  <button class="prev-btn" onclick="changeSlide(-1)">&#10094;</button>
-  <button class="next-btn" onclick="changeSlide(1)">&#10095;</button>
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
-
-css
-body {
-  font-family: Arial, sans-serif;
-}
-
 .slider-container {
-  position: relative;
-  width: 80%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
   margin: 0 auto;
   overflow: hidden;
 }
-
-.slider {
-  display: flex;
-  width: 300%; /* Три слайда, каждый на 100% ширины контейнера */
-  transition: transform 0.5s ease-in-out;
-}
-
-.slide {
-  flex: 0 0 33.333%; /* Каждый слайд занимает 1/3 ширины контейнера */
-}
-
-img {
-  width: 100%;
-}
-
-.prev-btn,
-.next-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 24px;
-  background: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон */
-  color: #fff; /* Белый цвет текста */
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-}
-
-.prev-btn {
-  left: 0;
-}
-
-.next-btn {
-  right: 0;
-}
-
-js
-let currentSlide = 0;
-
-function showSlide(index) {
-  const slides = document.querySelectorAll('.slide');
-  const totalSlides = slides.length;
-
-  currentSlide = (index + totalSlides) % totalSlides;
-
-  slides.forEach((slide, i) => {
-    slide.style.display = i === currentSlide ? 'block' : 'none';
-  });
-}
-
-function changeSlide(direction) {
-  showSlide(currentSlide + direction);
-}
-
-// Auto slide change (optional)
-// setInterval(() => changeSlide(1), 3000);
