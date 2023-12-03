@@ -9,6 +9,11 @@ public:
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
 
 protected:
+    char getSymbol() const {
+        return symbol;
+    }
+
+private:
     char symbol;
 };
 
@@ -81,18 +86,18 @@ public:
     bool checkWin() const {
         for (int i = 0; i < size; ++i) {
             if (cells[i][0] != nullptr) {
-                if (cells[i][0]->symbol == cells[i][1]->symbol && cells[i][1]->symbol == cells[i][2]->symbol)
+                if (cells[i][0]->getSymbol() == cells[i][1]->getSymbol() && cells[i][1]->getSymbol() == cells[i][2]->getSymbol())
                     return true;
 
-                if (cells[0][i]->symbol == cells[1][i]->symbol && cells[1][i]->symbol == cells[2][i]->symbol)
+                if (cells[0][i]->getSymbol() == cells[1][i]->getSymbol() && cells[1][i]->getSymbol() == cells[2][i]->getSymbol())
                     return true;
             }
         }
 
-        if (cells[0][0] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol)
+        if (cells[0][0] != nullptr && cells[0][0]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][2]->getSymbol())
             return true;
 
-        if (cells[0][2] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol)
+        if (cells[0][2] != nullptr && cells[0][2]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][0]->getSymbol())
             return true;
 
         return false;
