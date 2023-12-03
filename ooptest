@@ -86,6 +86,8 @@ public:
                 for (int j = 1; j < size; ++j) {
                     horizontalWin &= (cells[i][j] != nullptr && cells[i][j]->symbol == cells[i][0]->symbol);
                     verticalWin &= (cells[j][i] != nullptr && cells[j][i]->symbol == cells[0][i]->symbol);
+                    if (!horizontalWin && !verticalWin)
+                        break;
                 }
                 if (horizontalWin || verticalWin) {
                     return true;
