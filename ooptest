@@ -81,26 +81,19 @@ public:
     bool checkWin() const {
         for (int i = 0; i < size; ++i) {
             if (cells[i][0] != nullptr) {
-                bool horizontalWin = true;
-                bool verticalWin = true;
-                for (int j = 1; j < size; ++j) {
-                    horizontalWin &= (cells[i][j] != nullptr && cells[i][j]->symbol == cells[i][0]->symbol);
-                    verticalWin &= (cells[j][i] != nullptr && cells[j][i]->symbol == cells[0][i]->symbol);
-                    if (!horizontalWin && !verticalWin)
-                        break;
-                }
-                if (horizontalWin || verticalWin) {
+                if (cells[i][0]->symbol == cells[i][1]->symbol && cells[i][1]->symbol == cells[i][2]->symbol)
                     return true;
-                }
+
+                if (cells[0][i]->symbol == cells[1][i]->symbol && cells[1][i]->symbol == cells[2][i]->symbol)
+                    return true;
             }
         }
 
-        if (cells[0][0] != nullptr && cells[1][1] != nullptr && cells[2][2] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol) {
+        if (cells[0][0] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol)
             return true;
-        }
-        if (cells[0][2] != nullptr && cells[1][1] != nullptr && cells[2][0] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol) {
+
+        if (cells[0][2] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol)
             return true;
-        }
 
         return false;
     }
@@ -133,7 +126,7 @@ int main() {
                 int row = event.mouseButton.y / cellSize;
 
                 if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
-                    if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
+                    if ((isCrossTurn && board.makeMove(row, col, &cross)) || (!isCrossTurn && board.makeMove(row, col, &circle))) {
                         isCrossTurn = !isCrossTurn;
                         if (board.checkWin()) {
                             std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
