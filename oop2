@@ -8,15 +8,23 @@ public:
 
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize, char symbol) const = 0;
 
+    char getSymbol() const {
+        return symbol;
+    }
+
 protected:
     char symbol;
 };
+
+void Figure::draw(sf::RenderWindow& window, int row, int col, float cellSize, char symbol) const {
+    // Ваш код рисования
+}
 
 class Cross : public Figure {
 public:
     Cross() : Figure('X') {}
 
-    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const final {
         sf::VertexArray cross(sf::Lines, 4);
 
         float offset = 5.f;
@@ -29,7 +37,7 @@ public:
         for (int i = 0; i < 4; ++i)
             cross[i].color = sf::Color::Red;
 
-        Figure::draw(window, row, col, cellSize, symbol);
+        Figure::draw(window, row, col, cellSize, getSymbol());
     }
 };
 
@@ -37,7 +45,7 @@ class Circle : public Figure {
 public:
     Circle() : Figure('O') {}
 
-    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const final {
         sf::CircleShape circle(cellSize / 2 - 11.f);
         circle.setFillColor(sf::Color::Transparent);
         circle.setOutlineThickness(10.f);
@@ -46,7 +54,7 @@ public:
 
         window.draw(circle);
 
-        Figure::draw(window, row, col, cellSize, symbol);
+        Figure::draw(window, row, col, cellSize, getSymbol());
     }
 };
 
@@ -66,7 +74,7 @@ public:
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
                 if (cells[i][j] != nullptr) {
-                    cells[i][j]->draw(window, i, j, cellSize, cells[i][j]->symbol);
+                    cells[i][j]->draw(window, i, j, cellSize, cells[i][j]->getSymbol());
                 }
             }
         }
@@ -83,18 +91,18 @@ public:
     bool checkWin() const {
         for (int i = 0; i < size; ++i) {
             if (cells[i][0] != nullptr) {
-                if (cells[i][0]->symbol == cells[i][1]->symbol && cells[i][1]->symbol == cells[i][2]->symbol)
+                if (cells[i][0]->getSymbol() == cells[i][1]->getSymbol() && cells[i][1]->getSymbol() == cells[i][2]->getSymbol())
                     return true;
 
-                if (cells[0][i]->symbol == cells[1][i]->symbol && cells[1][i]->symbol == cells[2][i]->symbol)
+                if (cells[0][i]->getSymbol() == cells[1][i]->getSymbol() && cells[1][i]->getSymbol() == cells[2][i]->getSymbol())
                     return true;
             }
         }
 
-        if (cells[0][0] != nullptr && cells[0][0]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][2]->symbol)
+        if (cells[0][0] != nullptr && cells[0][0]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][2]->getSymbol())
             return true;
 
-        if (cells[0][2] != nullptr && cells[0][2]->symbol == cells[1][1]->symbol && cells[1][1]->symbol == cells[2][0]->symbol)
+        if (cells[0][2] != nullptr && cells[0][2]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][0]->getSymbol())
             return true;
 
         return false;
