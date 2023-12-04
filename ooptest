@@ -55,7 +55,7 @@ public:
 
 class Board {
 public:
-    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)) {}
+    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)), winner('\0') {}
 
     ~Board() {
         for (int i = 0; i < size; ++i) {
@@ -78,6 +78,9 @@ public:
     bool makeMove(int row, int col, Figure* figure) {
         if (cells[row][col] == nullptr) {
             cells[row][col] = figure;
+            if (checkWin()) {
+                winner = figure->getSymbol();
+            }
             return true;
         }
         return false;
@@ -92,9 +95,14 @@ public:
         return checkLine(0, 0, 1, 1) || checkLine(0, size - 1, 1, -1);
     }
 
+    char getWinner() const {
+        return winner;
+    }
+
 private:
     int size;
     std::vector<std::vector<Figure*>> cells;
+    char winner;
 
     bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
         char symbol = cells[startRow][startCol] ? cells[startRow][startCol]->getSymbol() : '\0';
@@ -138,8 +146,8 @@ int main() {
                     if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
                         isCrossTurn = !isCrossTurn;
                         if (board.checkWin()) {
-                            std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
-                            window.close();
+                            char winner = board.getWinner();
+                            std::cout << "Player " << winner << " wins!" << std::endl;
                         }
                     }
                 }
