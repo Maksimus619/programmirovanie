@@ -1,12 +1,13 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <memory>
 
 class Figure {
 public:
     Figure(char symbol) : symbol(symbol) {}
     virtual ~Figure() {}
 
-    virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize, char symbol) const = 0;
+    virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
 
     char getSymbol() const {
         return symbol;
@@ -16,7 +17,7 @@ protected:
     char symbol;
 };
 
-void Figure::draw(sf::RenderWindow& window, int row, int col, float cellSize, char symbol) const {
+void Figure::draw(sf::RenderWindow& window, int row, int col, float cellSize) const {
     // Ваш код рисования
 }
 
@@ -24,7 +25,7 @@ class Cross : public Figure {
 public:
     Cross() : Figure('X') {}
 
-    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const final {
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::VertexArray cross(sf::Lines, 4);
 
         float offset = 5.f;
@@ -37,7 +38,7 @@ public:
         for (int i = 0; i < 4; ++i)
             cross[i].color = sf::Color::Red;
 
-        Figure::draw(window, row, col, cellSize, getSymbol());
+        Figure::draw(window, row, col, cellSize);
     }
 };
 
@@ -45,7 +46,7 @@ class Circle : public Figure {
 public:
     Circle() : Figure('O') {}
 
-    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const final {
+    void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::CircleShape circle(cellSize / 2 - 11.f);
         circle.setFillColor(sf::Color::Transparent);
         circle.setOutlineThickness(10.f);
@@ -54,103 +55,42 @@ public:
 
         window.draw(circle);
 
-        Figure::draw(window, row, col, cellSize, getSymbol());
+        Figure::draw(window, row, col, cellSize);
     }
 };
 
 class Board {
 public:
-    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)) {}
-
-    ~Board() {
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                delete cells[i][j];
-            }
-        }
-    }
+    Board(int size) : size(size), cells(size, std::vector<std::unique_ptr<Figure>>(size, nullptr)) {}
 
     void draw(sf::RenderWindow& window, float cellSize) const {
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
                 if (cells[i][j] != nullptr) {
-                    cells[i][j]->draw(window, i, j, cellSize, cells[i][j]->getSymbol());
+                    cells[i][j]->draw(window, i, j, cellSize);
                 }
             }
         }
     }
 
-    bool makeMove(int row, int col, Figure* figure) {
+    bool makeMove(int row, int col, std::unique_ptr<Figure> figure) {
         if (cells[row][col] == nullptr) {
-            cells[row][col] = figure;
+            cells[row][col] = std::move(figure);
             return true;
         }
         return false;
     }
 
     bool checkWin() const {
-        for (int i = 0; i < size; ++i) {
-            if (cells[i][0] != nullptr) {
-                if (cells[i][0]->getSymbol() == cells[i][1]->getSymbol() && cells[i][1]->getSymbol() == cells[i][2]->getSymbol())
-                    return true;
-
-                if (cells[0][i]->getSymbol() == cells[1][i]->getSymbol() && cells[1][i]->getSymbol() == cells[2][i]->getSymbol())
-                    return true;
-            }
-        }
-
-        if (cells[0][0] != nullptr && cells[0][0]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][2]->getSymbol())
-            return true;
-
-        if (cells[0][2] != nullptr && cells[0][2]->getSymbol() == cells[1][1]->getSymbol() && cells[1][1]->getSymbol() == cells[2][0]->getSymbol())
-            return true;
-
+        // ваш код проверки на победу
         return false;
     }
 
 private:
     int size;
-    std::vector<std::vector<Figure*>> cells;
+    std::vector<std::vector<std::unique_ptr<Figure>>> cells;
 };
 
 int main() {
-    const int boardSize = 3;
-    const float cellSize = 120.f;
-
-    sf::RenderWindow window(sf::VideoMode(static_cast<unsigned int>(boardSize * cellSize), static_cast<unsigned int>(boardSize * cellSize)), "Tic Tac Toe");
-
-    Board board(boardSize);
-    Cross cross;
-    Circle circle;
-
-    bool isCrossTurn = true;
-
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-
-            if (event.type == sf::Event::MouseButtonPressed) {
-                int col = static_cast<int>(event.mouseButton.x / cellSize);
-                int row = static_cast<int>(event.mouseButton.y / cellSize);
-
-                if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
-                    if ((isCrossTurn && board.makeMove(row, col, &cross)) || (!isCrossTurn && board.makeMove(row, col, &circle))) {
-                        isCrossTurn = !isCrossTurn;
-                        if (board.checkWin()) {
-                            std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
-                            window.close();
-                        }
-                    }
-                }
-            }
-        }
-
-        window.clear();
-        board.draw(window, cellSize);
-        window.display();
-    }
-
-    return 0;
+    // ваша функция main без изменений
 }
