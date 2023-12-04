@@ -3,18 +3,15 @@
 
 class Figure {
 public:
-    Figure(char symbol) : symbol(symbol) {}
     virtual ~Figure() {}
 
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
-
-protected:
-    char symbol;
+    virtual char getSymbol() const = 0;
 };
 
 class Cross : public Figure {
 public:
-    Cross() : Figure('X') {}
+    Cross() {}
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::VertexArray cross(sf::Lines, 4);
@@ -31,11 +28,15 @@ public:
 
         window.draw(cross);
     }
+
+    char getSymbol() const override {
+        return 'X';
+    }
 };
 
 class Circle : public Figure {
 public:
-    Circle() : Figure('O') {}
+    Circle() {}
 
     void draw(sf::RenderWindow& window, int row, int col, float cellSize) const override {
         sf::CircleShape circle(cellSize / 2 - 11.f);
@@ -45,6 +46,10 @@ public:
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
 
         window.draw(circle);
+    }
+
+    char getSymbol() const override {
+        return 'O';
     }
 };
 
@@ -92,13 +97,13 @@ private:
     std::vector<std::vector<Figure*>> cells;
 
     bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
-        char symbol = cells[startRow][startCol] ? cells[startRow][startCol]->symbol : '\0';
+        char symbol = cells[startRow][startCol] ? cells[startRow][startCol]->getSymbol() : '\0';
 
         for (int i = 0; i < size; ++i) {
             int row = startRow + i * rowIncrement;
             int col = startCol + i * colIncrement;
 
-            if (cells[row][col] == nullptr || cells[row][col]->symbol != symbol) {
+            if (cells[row][col] == nullptr || cells[row][col]->getSymbol() != symbol) {
                 return false;
             }
         }
