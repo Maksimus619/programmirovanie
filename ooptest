@@ -55,7 +55,7 @@ public:
 
 class Board {
 public:
-    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)), winner('\0') {}
+    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)), winner('\0'), isGameOver(false) {}
 
     ~Board() {
         for (int i = 0; i < size; ++i) {
@@ -76,10 +76,12 @@ public:
     }
 
     bool makeMove(int row, int col, Figure* figure) {
-        if (cells[row][col] == nullptr) {
+        if (!isGameOver && cells[row][col] == nullptr) {
             cells[row][col] = figure;
             if (checkWin()) {
                 winner = figure->getSymbol();
+            } else if (isGameDraw()) {
+                winner = 'D'; // 'D' для ничьи
             }
             return true;
         }
@@ -99,10 +101,30 @@ public:
         return winner;
     }
 
+    bool isGameDraw() const {
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                if (cells[i][j] == nullptr) {
+                    return false; // Найдена пустая клетка, игра не ничья
+                }
+            }
+        }
+        return true; // Все клетки заполнены, но нет победителя
+    }
+
+    bool isGameEnded() const {
+        return isGameOver;
+    }
+
+    void setGameEnded() {
+        isGameOver = true;
+    }
+
 private:
     int size;
     std::vector<std::vector<Figure*>> cells;
     char winner;
+    bool isGameOver;
 
     bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
         char symbol = cells[startRow][startCol] ? cells[startRow][startCol]->getSymbol() : '\0';
@@ -138,16 +160,21 @@ int main() {
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            if (event.type == sf::Event::MouseButtonPressed) {
+            if (!board.isGameEnded() && event.type == sf::Event::MouseButtonPressed) {
                 int col = event.mouseButton.x / cellSize;
                 int row = event.mouseButton.y / cellSize;
 
                 if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
-                    if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
+                    if (board.makeMove(row, col, isCrossTurn ? &cross : &circle)) {
                         isCrossTurn = !isCrossTurn;
                         if (board.checkWin()) {
                             char winner = board.getWinner();
-                            std::cout << "Player " << winner << " wins!" << std::endl;
+                            if (winner == 'D') {
+                                std::cout << "It's a draw!" << std::endl;
+                            } else {
+                                std::cout << "Player " << winner << " wins!" << std::endl;
+                            }
+                            board.setGameEnded();
                         }
                     }
                 }
