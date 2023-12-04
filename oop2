@@ -1,6 +1,5 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <memory>
 
 class Figure {
 public:
@@ -9,17 +8,9 @@ public:
 
     virtual void draw(sf::RenderWindow& window, int row, int col, float cellSize) const = 0;
 
-    char getSymbol() const {
-        return symbol;
-    }
-
 protected:
     char symbol;
 };
-
-void Figure::draw(sf::RenderWindow& window, int row, int col, float cellSize) const {
-    // Ваш код рисования
-}
 
 class Cross : public Figure {
 public:
@@ -38,7 +29,7 @@ public:
         for (int i = 0; i < 4; ++i)
             cross[i].color = sf::Color::Red;
 
-        Figure::draw(window, row, col, cellSize);
+        window.draw(cross);
     }
 };
 
@@ -54,14 +45,20 @@ public:
         circle.setPosition(col * cellSize + 5.f, row * cellSize + 5.f);
 
         window.draw(circle);
-
-        Figure::draw(window, row, col, cellSize);
     }
 };
 
 class Board {
 public:
-    Board(int size) : size(size), cells(size, std::vector<std::unique_ptr<Figure>>(size, nullptr)) {}
+    Board(int size) : size(size), cells(size, std::vector<Figure*>(size, nullptr)) {}
+
+    ~Board() {
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                delete cells[i][j];
+            }
+        }
+    }
 
     void draw(sf::RenderWindow& window, float cellSize) const {
         for (int i = 0; i < size; ++i) {
@@ -73,24 +70,81 @@ public:
         }
     }
 
-    bool makeMove(int row, int col, std::unique_ptr<Figure> figure) {
+    bool makeMove(int row, int col, Figure* figure) {
         if (cells[row][col] == nullptr) {
-            cells[row][col] = std::move(figure);
+            cells[row][col] = figure;
             return true;
         }
         return false;
     }
 
     bool checkWin() const {
-        // ваш код проверки на победу
-        return false;
+        for (int i = 0; i < size; ++i) {
+            if (checkLine(0, i, 1, 0) || checkLine(i, 0, 0, 1))
+                return true;
+        }
+
+        return checkLine(0, 0, 1, 1) || checkLine(0, size - 1, 1, -1);
     }
 
 private:
     int size;
-    std::vector<std::vector<std::unique_ptr<Figure>>> cells;
+    std::vector<std::vector<Figure*>> cells;
+
+    bool checkLine(int startRow, int startCol, int rowIncrement, int colIncrement) const {
+        char symbol = cells[startRow][startCol] ? cells[startRow][startCol]->symbol : '\0';
+
+        for (int i = 0; i < size; ++i) {
+            int row = startRow + i * rowIncrement;
+            int col = startCol + i * colIncrement;
+
+            if (cells[row][col] == nullptr || cells[row][col]->symbol != symbol) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 };
 
 int main() {
-    // ваша функция main без изменений
+    const int boardSize = 3;
+    const float cellSize = 120.f;
+
+    sf::RenderWindow window(sf::VideoMode(boardSize * cellSize, boardSize * cellSize), "Tic Tac Toe");
+
+    Board board(boardSize);
+    Cross cross;
+    Circle circle;
+
+    bool isCrossTurn = true;
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                int col = event.mouseButton.x / cellSize;
+                int row = event.mouseButton.y / cellSize;
+
+                if (col >= 0 && col < boardSize && row >= 0 && row < boardSize) {
+                    if (isCrossTurn && board.makeMove(row, col, &cross) || !isCrossTurn && board.makeMove(row, col, &circle)) {
+                        isCrossTurn = !isCrossTurn;
+                        if (board.checkWin()) {
+                            std::cout << (isCrossTurn ? "Cross" : "Circle") << " wins!" << std::endl;
+                            window.close();
+                        }
+                    }
+                }
+            }
+        }
+
+        window.clear();
+        board.draw(window, cellSize);
+        window.display();
+    }
+
+    return 0;
 }
