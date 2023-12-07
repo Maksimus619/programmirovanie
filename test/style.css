@@ -95,6 +95,11 @@
 	float: left;
 	padding: 20px;
 }
+.product2 {
+	width: 50%;
+	float: center;
+	padding: 20px;
+}
 
 .product img {
 	width: 100%;
@@ -198,6 +203,7 @@
     background-color: white;
     padding: 1rem 1.5rem;
     width: 24rem;
+    height: 25rem;
     border-radius: 0.5rem;
 }
 .close-button {
@@ -217,4 +223,25 @@
     visibility: visible;
     transform: scale(1.0);
     transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+}
+.bottom__menu {
+	background-color: Gray;
+	height: 150px;
+	width: 100%;
+
+}
+.text_left_b{
+	width: 10%;
+	height: 5%;
+	margin: 20px 5%;
+}
+.text_left_b2{
+	width: 35%;
+	height: 5%;
+	margin: -20px 20%;
+}
+.text_right{
+	width: 20%;
+	height: 5%;
+	margin: -20px 70%;
 }

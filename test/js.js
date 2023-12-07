@@ -53,3 +53,13 @@ closeButtons.forEach(function (closeButton) {
 });
 
 window.addEventListener("click", windowOnClick);
+    function knopka__katalog() {
+      // Задайте нужную высоту в пикселях
+      var targetHeight = 1000;
+      
+      // Используйте метод scrollTo для перемещения
+      window.scrollTo({
+        top: targetHeight,
+        behavior: 'smooth' // Плавный скроллинг
+      });
+    }
