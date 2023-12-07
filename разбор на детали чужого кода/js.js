@@ -20,7 +20,10 @@ triggers.forEach(function (trigger) {
 });
 
 closeButtons.forEach(function (closeButton) {
-    closeButton.addEventListener("click", toggleModal);
+    closeButton.addEventListener("click", function () {
+        var modal = this.closest(".modal");
+        modal.classList.remove("show-modal");
+    });
 });
 
 window.addEventListener("click", windowOnClick);
