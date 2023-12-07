@@ -3,7 +3,8 @@ var triggers = document.querySelectorAll(".trigger");
 var closeButtons = document.querySelectorAll(".close-button");
 
 function toggleModal() {
-    this.classList.toggle("show-modal");
+    var modal = this.nextElementSibling;
+    modal.classList.toggle("show-modal");
 }
 
 function windowOnClick(event) {
