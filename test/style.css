@@ -61,6 +61,10 @@
 	width: 100%;
 	background-color: white;
 }
+.bodys2{
+	width: 100%;
+	background-color: white;
+}
 .text_bigbody{
 	text-align: center;
 	padding-top: 40px;
@@ -187,6 +191,7 @@
     position: fixed;
     left: 0;
     top: 0;
+    z-index: 1;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
@@ -244,4 +249,35 @@
 	width: 20%;
 	height: 5%;
 	margin: -20px 70%;
+}
+
+@media only screen and (max-width: 768px) {
+  .header__gl {
+    height: 500px;
+  }
+
+  .text_big, .text__podbig, .text_bigbody, .text__podbody {
+    margin: 5% 5%;
+  }
+
+  .sidebar {
+    width: 100%; 
+    margin: 20px 0; 
+  }
+
+  .product, .product__mini {
+    width: 100%; 
+    margin: 2% 0; 
+  }
+
+  .slider-container {
+    left: 50%; 
+    transform: translateX(-50%);
+    width: 90%; 
+  }
+
+  .text_left_b, .text_left_b2, .text_right {
+    width: 100%; 
+    margin: 20px 0; 
+  }
 }

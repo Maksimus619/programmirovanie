@@ -1,4 +1,4 @@
-const slider = document.querySelector('.slider');
+﻿const slider = document.querySelector('.slider');
 const prevButton = document.querySelector('.prev-button');
 const nextButton = document.querySelector('.next-button');
 const slides = Array.from(slider.querySelectorAll('img'));
@@ -54,8 +54,20 @@ closeButtons.forEach(function (closeButton) {
 
 window.addEventListener("click", windowOnClick);
     function knopka__katalog() {
-      // Задайте нужную высоту в пикселях
+      //нужная высота в пикселях
       var targetHeight = 1000;
+      
+      // Используйте метод scrollTo для перемещения
+      window.scrollTo({
+        top: targetHeight,
+        behavior: 'smooth' // Плавный скроллинг
+      });
+    }
+
+window.addEventListener("click", windowOnClick);
+    function O_kom() {
+      //нужная высота в пикселях
+      var targetHeight = 3300;
       
       // Используйте метод scrollTo для перемещения
       window.scrollTo({
