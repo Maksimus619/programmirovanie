@@ -100,7 +100,12 @@
 	padding: 20px;
 }
 .product2 {
-	width: 50%;
+	width: 80%;
+	float: center;
+	padding: 20px;
+}
+.product3 {
+	width: 80%;
 	float: center;
 	padding: 20px;
 }
@@ -257,6 +262,11 @@
 
 .slide_text{
 	text-align: center;
+}
+
+.text_right{
+	width: 70%;
+	height: 5%;
 }
 
 @media (min-width: 768px){
