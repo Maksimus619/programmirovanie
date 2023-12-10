@@ -1,14 +1,39 @@
-.header__menu {
-    flex-direction: column; /* Располагаем элементы меню вертикально */
-    align-items: center; /* Центрируем элементы в меню */
+@media only screen and (max-width: 480px) {
+  .header__gl {
+    height: 200px; /* Подстройте высоту по необходимости */
+  }
+
+  .text_big, .text__podbig, .text_bigbody, .text__podbody {
+    margin: 5% 3%;
+  }
+
+  .sidebar {
+    width: 100%;
+    margin: 20px 0;
+  }
+
+  .product, .product__mini {
+    width: 100%;
+    margin: 2% 0;
+  }
+
+  .slider-container {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+  }
+
+  .text_left_b, .text_left_b2, .text_right {
+    width: 100%;
+    margin: 10px 0;
   }
 
   .header__menu button {
-    margin: 5px 0; /* Добавляем немного пространства между кнопками */
+    margin: 5px 0;
   }
 
   .bottom__menu {
-    height: auto; /* Подстройте высоту по необходимости */
+    height: auto;
   }
 
   .text_left_b, .text_left_b2, .text_right {
