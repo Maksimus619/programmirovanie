@@ -75,3 +75,14 @@ window.addEventListener("click", windowOnClick);
         behavior: 'smooth' // Плавный скроллинг
       });
     }
+window.addEventListener("click", windowOnClick);
+    function poch() {
+      //нужная высота в пикселях
+      var targetHeight = 3600;
+      
+      // Используйте метод scrollTo для перемещения
+      window.scrollTo({
+        top: targetHeight,
+        behavior: 'smooth' // Плавный скроллинг
+      });
+    }
