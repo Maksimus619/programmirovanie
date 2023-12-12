@@ -159,8 +159,10 @@ int main() {
                         if (board.checkWin()) {
                             char winner = board.getWinner();
                             std::cout << "Player " << winner << " wins!" << std::endl;
+                                window.close();
                         } else if (board.isBoardFull()) {
                             std::cout << "It's a draw!" << std::endl;
+                                window.close();
                         }
                     }
                 }
