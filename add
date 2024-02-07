@@ -1,43 +1,21 @@
-@media only screen and (max-width: 480px) {
-  .header__gl {
-    height: 200px; /* Подстройте высоту по необходимости */
-  }
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99
+LDFLAGS = -lm
 
-  .text_big, .text__podbig, .text_bigbody, .text__podbody {
-    margin: 5% 3%;
-  }
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
 
-  .sidebar {
-    width: 100%;
-    margin: 20px 0;
-  }
+TARGET = test
 
-  .product, .product__mini {
-    width: 100%;
-    margin: 2% 0;
-  }
+.PHONY: all clean
 
-  .slider-container {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-  }
+all: $(TARGET)
 
-  .text_left_b, .text_left_b2, .text_right {
-    width: 100%;
-    margin: 10px 0;
-  }
+$(TARGET): $(OBJS)
+    $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-  .header__menu button {
-    margin: 5px 0;
-  }
+%.o: %.c
+    $(CC) $(CFLAGS) -c $< -o $@
 
-  .bottom__menu {
-    height: auto;
-  }
-
-  .text_left_b, .text_left_b2, .text_right {
-    width: 100%;
-    margin: 10px 0;
-  }
-}
+clean:
+    $(RM) $(OBJS) $(TARGET)
