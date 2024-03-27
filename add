@@ -1,36 +1,41 @@
-#include <mySimpleComputer.h>
-#include <stdlib.h> // Для использования функции malloc и free
+#include <iostream>
+#include <cmath>
 
-int sc_memoryLoad(char *filename) {
-    FILE *file = fopen(filename, "rb");
+using namespace std;
 
-    if (file == NULL) {
-        return -1;
+// Функция, для которой ищется корень
+double f(double x) {
+    return 3 - 0.5 * sqrt(x) - exp(-0.5 * x * x);
+}
+
+// Метод Стеффенсена для нахождения корня уравнения с заданной точностью
+double steffensen(double a, double b, double epsilon) {
+    double x0, x1, x2;
+    x0 = (a + b) / 2; // Начальное приближение
+    do {
+        x1 = x0 - (f(x0) * f(x0)) / (f(x0 + f(x0)) - f(x0));
+        x2 = x1 - (f(x1) * f(x1)) / (f(x1 + f(x1)) - f(x1));
+        x0 = x2;
+    } while (fabs(x2 - x1) >= epsilon);
+    return x2;
+}
+
+int main() {
+    double a = 0.0; // Левый конец отрезка
+    double b = 10.0; // Правый конец отрезка
+    double epsilon = 1e-6; // Точность
+
+    // Локализация корня: проверка знаков на концах отрезка
+    if (f(a) * f(b) > 0) {
+        cout << "Корень не найден. На концах отрезка функция имеет одинаковые знаки." << endl;
+        return 1;
     }
 
-    // Создаем временный буфер для данных
-    int *temp_memory = (int *)malloc(MEMORY_SIZE * sizeof(int));
-    if (temp_memory == NULL) {
-        fclose(file);
-        return -1; // Ошибка выделения памяти
-    }
+    // Поиск корня с заданной точностью
+    double root = steffensen(a, b, epsilon);
 
-    // Считываем данные во временный буфер
-    size_t elements_read = fread(temp_memory, sizeof(int), MEMORY_SIZE, file);
-    fclose(file);
-
-    if (elements_read != MEMORY_SIZE) {
-        free(temp_memory);
-        return -1; // Ошибка чтения файла
-    }
-
-    // Копируем данные из временного буфера в memory
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        memory[i] = temp_memory[i];
-    }
-
-    // Освобождаем временный буфер
-    free(temp_memory);
+    // Вывод результата
+    cout << "Найденный корень уравнения: " << root << endl;
 
     return 0;
 }
