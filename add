@@ -1,41 +1,5 @@
-#include <iostream>
-#include <cmath>
-
-using namespace std;
-
-// Функция, для которой ищется корень
-double f(double x) {
-    return 3 - 0.5 * sqrt(x) - exp(-0.5 * x * x);
-}
-
-// Метод Стеффенсена для нахождения корня уравнения с заданной точностью
-double steffensen(double a, double b, double epsilon) {
-    double x0, x1, x2;
-    x0 = (a + b) / 2; // Начальное приближение
-    do {
-        x1 = x0 - (f(x0) * f(x0)) / (f(x0 + f(x0)) - f(x0));
-        x2 = x1 - (f(x1) * f(x1)) / (f(x1 + f(x1)) - f(x1));
-        x0 = x2;
-    } while (fabs(x2 - x1) >= epsilon);
-    return x2;
-}
-
-int main() {
-    double a = 0.0; // Левый конец отрезка
-    double b = 10.0; // Правый конец отрезка
-    double epsilon = 1e-6; // Точность
-
-    // Локализация корня: проверка знаков на концах отрезка
-    if (f(a) * f(b) > 0) {
-        cout << "Корень не найден. На концах отрезка функция имеет одинаковые знаки." << endl;
-        return 1;
-    }
-
-    // Поиск корня с заданной точностью
-    double root = steffensen(a, b, epsilon);
-
-    // Вывод результата
-    cout << "Найденный корень уравнения: " << root << endl;
-
-    return 0;
-}
+        // Выводим номер итерации
+        cout << "Итерация " << iter << ":" << endl;
+        for (size_t i = 0; i < x.size(); ++i) {
+            cout << "x[" << i << "] = " << x[i] << endl;
+        }
