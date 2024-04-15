@@ -3,7 +3,7 @@
 #include <omp.h>
 
 double func(double x) {
-    return (sqrt(x(3-x))/(x+1));
+    return (sqrt(x*(3-x))/(x+1));
 }
 
 int main(int argc, char **argv) {

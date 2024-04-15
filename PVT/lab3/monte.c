@@ -6,7 +6,7 @@
 #define M_PI 3.14159265358979323846
 
 double func(double x, double y) {
-    return x / (y * y);
+    return exp(x-y);
 }
 
 double getrand(double min, double max, unsigned int *seed) {
@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
 
         // Однопоточное вычисление
         for (int i = 0; i < n; i++) {
-            double x = getrand(0, 1, &main_seed);
-            double y = getrand(2, 5, &main_seed);
+            double x = getrand(-1, 0, &main_seed);
+            double y = getrand(0, 1, &main_seed);
             s += func(x, y);
             in++;
         }
