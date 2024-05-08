@@ -1,49 +1,60 @@
-#include <stdio.h>
+#include <iostream>
+#include <vector>
+#include <iomanip>
+#include <fstream> // Для работы с файлами
 
-// Включите здесь реализацию функции bc_strlen
-int bc_strlen(char *str) {
-    if (str == NULL) {
-        return 0;
-    }
+// Параметры модели
+struct Params {
+    double alphaI, alphaE, beta, kappa, rho, mu, gamma;
+    int N; // Общее количество населения
+};
 
-    int count = 0;
-    unsigned char *p = (unsigned char *)str;
+// Основные переменные модели
+struct Variables {
+    double S, E, I, R, D;
+};
 
-    while (*p) {
-        if (*p < 0x80) {
-            p += 1;
-        } else if ((*p & 0xe0) == 0xc0) {
-            if (*(p+1) == 0 || (*(p+1) & 0xc0) != 0x80) return 0;
-            p += 2;
-        } else if ((*p & 0xf0) == 0xe0) {
-            if (*(p+1) == 0 || (*(p+1) & 0xc0) != 0x80 ||
-                *(p+2) == 0 || (*(p+2) & 0xc0) != 0x80) return 0;
-            p += 3;
-        } else if ((*p & 0xf8) == 0xf0) {
-            if (*(p+1) == 0 || (*(p+1) & 0xc0) != 0x80 ||
-                *(p+2) == 0 || (*(p+2) & 0xc0) != 0x80 ||
-                *(p+3) == 0 || (*(p+3) & 0xc0) != 0x80) return 0;
-            p += 4;
-        } else {
-            return 0;
-        }
-        count++;
-    }
+// Функция для обновления переменных согласно SEIR-D модели
+void seirDModel(Variables& vars, const Params& params, double dt) {
+    double newS = vars.S - dt * (params.alphaI * vars.S * vars.I / params.N + params.alphaE * vars.S * vars.E / params.N) + dt * params.gamma * vars.R;
+    double newE = vars.E + dt * (params.alphaI * vars.S * vars.I / params.N + params.alphaE * vars.S * vars.E / params.N) - dt * (params.kappa + params.rho) * vars.E;
+    double newI = vars.I + dt * params.kappa * vars.E - dt * (params.beta + params.mu) * vars.I;
+    double newR = vars.R + dt * params.beta * vars.I + dt * params.rho * vars.E - dt * params.gamma * vars.R;
+    double newD = vars.D + dt * params.mu * vars.I;
 
-    return count;
-}
-
-void test_strlen(char *str) {
-    int result = bc_strlen(str);
-    printf("Testing: '%s'\nResult: %d\n\n", str ? str : "(null)", result);
+    // Обновление переменных
+    vars.S = newS;
+    vars.E = newE;
+    vars.I = newI;
+    vars.R = newR;
+    vars.D = newD;
 }
 
 int main() {
-    test_strlen("Hello, World!"); // Корректная строка ASCII
-    test_strlen("Привет мир"); // Корректная строка в UTF-8
-    test_strlen("\xf0\x9f\x8d\x95"); // Корректная строка с эмодзи (пицца)
-    test_strlen("\xc3\x28"); // Некорректная строка (неверный второй байт)
-    test_strlen(NULL); // Тест на NULL указатель
+    // Инициализация параметров
+    Params params = {0.1, 0.1, 0.05, 0.05, 0.1, 0.01, 0.01, 1000000};
+
+    // Инициализация начальных значений переменных
+    Variables vars = {999000, 800, 100, 100, 0};
+
+    // Временной интервал и шаг по времени (dt)
+    double t = 0.0, T = 90.0, dt = 0.1;
+
+    // Открытие файла для записи
+    std::ofstream file("output.csv");
+
+    // Вывод заголовков для столбцов в файл
+    file << "Day,Susceptible,Exposed,Infected,Recovered,Deceased\n";
+
+    // Цикл по времени от 0 до 90 дней
+    for (int day = 0; t <= T; day++) {
+        file << std::fixed << std::setprecision(2) << t << "," << vars.S << "," << vars.E << "," << vars.I << "," << vars.R << "," << vars.D << "\n";
+        seirDModel(vars, params, dt);
+        t += dt;
+    }
+
+    // Закрытие файла
+    file.close();
 
     return 0;
 }
