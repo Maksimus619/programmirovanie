@@ -41,20 +41,26 @@ int main() {
     double t = 0.0, T = 90.0, dt = 0.1;
 
     // Открытие файла для записи
-    std::ofstream file("output.csv");
+    std::ofstream outFile("seird_data.csv");
 
-    // Вывод заголовков для столбцов в файл
-    file << "Day,Susceptible,Exposed,Infected,Recovered,Deceased\n";
+    // Проверка открытия файла
+    if (!outFile.is_open()) {
+        std::cerr << "Error opening file!" << std::endl;
+        return 1; // Завершаем программу с ошибкой
+    }
+
+    // Запись заголовков для столбцов
+    outFile << "Day,Susceptible,Exposed,Infected,Recovered,Deceased\n";
 
     // Цикл по времени от 0 до 90 дней
     for (int day = 0; t <= T; day++) {
-        file << std::fixed << std::setprecision(2) << t << "," << vars.S << "," << vars.E << "," << vars.I << "," << vars.R << "," << vars.D << "\n";
+        outFile << t << "," << vars.S << "," << vars.E << "," << vars.I << "," << vars.R << "," << vars.D << "\n";
         seirDModel(vars, params, dt);
         t += dt;
     }
 
     // Закрытие файла
-    file.close();
+    outFile.close();
 
     return 0;
 }
