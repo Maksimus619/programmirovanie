@@ -1,49 +1,84 @@
-#include <iostream>
-#include <vector>
-#include <iomanip>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-// Параметры модели
-struct Params {
-    double alphaI, alphaE, kappa, rho, beta, mu, c;
-    int N; // Общее количество населения
-};
+// Функция для расчета изменения числа восприимчивых
+double восприимчивые(double aI, double S, double I, double N, double aE, double E) {
+    return (-1 * ((aI * S * I) / N) + ((aE * S * E) / N));
+}
 
-// Основные переменные модели
-struct Variables {
-    double S, E, I, R, D;
-};
+// Функция для расчета изменения числа зараженных
+double зараженные(double aI, double S, double I, double N, double aE, double E, double K, double P) {
+    return ((((aI * S * I) / N) + ((aE * S * E) / N)) - ((K + P) * E));
+}
 
-// Функция для обновления переменных согласно SEIR-D модели
-void seirDModel(Variables& vars, const Params& params, double dt) {
-    double newS = vars.S - dt * params.c * (params.alphaI * vars.I * vars.S / params.N + params.alphaE * vars.E * vars.S / params.N);
-    double newE = vars.E + dt * params.c * (params.alphaI * vars.I * vars.S / params.N + params.alphaE * vars.E * vars.S / params.N) - dt * (params.kappa + params.rho) * vars.E;
-    double newI = vars.I + dt * params.kappa * vars.E - dt * (params.beta + params.mu) * vars.I;
-    double newR = vars.R + dt * params.beta * vars.I + dt * params.rho * vars.E;
-    double newD = vars.D + dt * params.mu * vars.I;
+// Функция для расчета изменения числа инфицированных
+double инфицированные(double K, double E, double I, double m, double B) {
+    return (K * E - B * I - m * I);
+}
 
-    // Обновление переменных
-    vars.S = newS;
-    vars.E = newE;
-    vars.I = newI;
-    vars.R = newR;
-    vars.D = newD;
+// Функция для расчета изменения числа выздоровевших
+double выздоровевшие(double B, double I, double P, double E) {
+    return (B * I + P * E);
+}
+
+// Функция для расчета изменения числа умерших
+double умершие(double m, double I) {
+    return (m * I);
+}
+
+// Обновление значений SEIRD модели
+void обновить_SEIRD(double *S, double *E, double *I, double *R, double *D, double h, double aI, double aE, double K, double P, double m, double B, int N) {
+    double S1 = *S + (h * восприимчивые(aI, *S, *I, N, aE, *E));
+    double E1 = *E + (h * зараженные(aI, *S, *I, N, aE, *E, K, P));
+    double I1 = *I + (h * инфицированные(K, *E, *I, m, B));
+    
+    *S += h / 2 * (восприимчивые(aI, *S, *I, N, aE, *E) + восприимчивые(aI, S1, I1, N, aE, E1));
+    *E += h / 2 * (зараженные(aI, *S, *I, N, aE, *E, K, P) + зараженные(aI, S1, I1, N, aE, E1, K, P));
+    *I += h / 2 * (инфицированные(K, *E, *I, m, B) + инфицированные(K, E1, I1, m, B));
+    *R += h / 2 * (выздоровевшие(B, *I, P, *E) + выздоровевшие(B, I1, P, E1));
+    *D += h / 2 * (умершие(m, *I) + умершие(m, I1));
+}
+
+// Главная функция для моделирования SEIRD группы
+double модель_SEIRD(double S, double E, double I, double R, double D, int дни) {
+    const double aI = 0.999;
+    const double aE = 0.999;
+    const double K = 0.042;
+    const double P = 0.952;
+    const double m = 0.0188;
+    const double B = 0.999;
+    const double h = дни / 90.0;
+    
+    int N = S + E + I + R + D;
+    
+    for (int i = 0; i < дни; i++) {
+        обновить_SEIRD(&S, &E, &I, &R, &D, h, aI, aE, K, P, m, B, N);
+    }
+    
+    return (K * E) / 0.58;
 }
 
 int main() {
-    // Инициализация параметров согласно данным из таблицы 11
-    Params params = {0.999, 0.999, 0.042, 0.952, 0.999, 0.0188, 1.0, 1000000}; // N - общее количество населения для демонстрации
-    Variables vars = {999000, 99, 24, 0, 0}; // Начальные значения E0 и I0 взяты из таблицы, R0 и D0 предполагаются равными нулю
+    double E = 99;
+    double I = 0;
+    double R = 24;
+    double D = 0;
+    double S = 2798170 - E - R;
 
-    double t = 0.0, T = 90.0, dt = 0.1;
-
-    std::cout << std::fixed << std::setprecision(2);
-    std::cout << "Day\tSusceptible\tExposed\tInfected\tRecovered\tDeceased\n";
-
-    for (int day = 0; t <= T; day++) {
-        std::cout << t << "\t" << vars.S << "\t" << vars.E << "\t" << vars.I << "\t" << vars.R << "\t" << vars.D << "\n";
-        seirDModel(vars, params, dt);
-        t += dt;
+    FILE *fd = fopen("1.txt", "w");
+    if (fd == NULL) {
+        perror("Ошибка при открытии файла");
+        return EXIT_FAILURE;
     }
 
+    char buf[100];
+    for (int i = 1; i <= 90; i++) {
+        double результат = модель_SEIRD(S, E, I, R, D, i);
+        snprintf(buf, sizeof(buf), "%d %.6f\n", i, результат);
+        fwrite(buf, sizeof(char), strlen(buf), fd);
+    }
+
+    fclose(fd);
     return 0;
 }
