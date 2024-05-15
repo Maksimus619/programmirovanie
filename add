@@ -1,84 +1,145 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
 
-// Функция для расчета изменения числа восприимчивых
-double восприимчивые(double aI, double S, double I, double N, double aE, double E) {
-    return (-1 * ((aI * S * I) / N) + ((aE * S * E) / N));
+enum keys {
+  ESC_KEY = 16,
+  L_KEY,
+  S_KEY,
+  R_KEY,
+  T_KEY,
+  I_KEY,
+  F5_KEY,
+  F6_KEY,
+  UP_KEY,
+  DOWN_KEY,
+  LEFT_KEY,
+  RIGHT_KEY,
+  ENTER_KEY,
+  NOTHING_KEY,
+  INVALID_KEY,
+
+  ZERO_KEY = 0,
+  ONE_KEY,
+  TWO_KEY,
+  THREE_KEY,
+  FOUR_KEY,
+  FIVE_KEY,
+  SIX_KEY,
+  SEVEN_KEY,
+  EIGHT_KEY,
+  NINE_KEY,
+  A_KEY = 10,
+  B_KEY,
+  C_KEY,
+  D_KEY,
+  E_KEY,
+  F_KEY,
+
+  PLUS_KEY = 45,
+  MINUS_KEY = 43
+};
+
+#define MIN_BUF_SIZE 6
+char buffer[MIN_BUF_SIZE];
+struct termios save;
+
+int rk_mytermregime(int regime, int vtime, int vmin, int echo, int sigint) {
+  struct termios curr;
+  tcgetattr(fileno(stdin), &curr);
+  // канонический режим
+  if (regime) {
+    curr.c_lflag |= ICANON;
+  }
+  // неканонический режим
+  else if (!regime) {
+    curr.c_lflag &= ~ICANON;
+    sigint ? (curr.c_lflag |= ISIG) : (curr.c_lflag &= ~ISIG);
+    echo ? (curr.c_lflag |= ECHO) : (curr.c_lflag &= ~ECHO);
+    curr.c_cc[VMIN] = vmin;
+    curr.c_cc[VTIME] = vtime;
+  }
+  if (tcsetattr(fileno(stdin), TCSAFLUSH, &curr) != 0) {
+    return -1;
+  }
+  return 0;
 }
 
-// Функция для расчета изменения числа зараженных
-double зараженные(double aI, double S, double I, double N, double aE, double E, double K, double P) {
-    return ((((aI * S * I) / N) + ((aE * S * E) / N)) - ((K + P) * E));
-}
+int rk_readkey(enum keys *key) {
+  char buf_local[MIN_BUF_SIZE - 1];
+  // очистка буфера
+  for (int i = 0; i < MIN_BUF_SIZE; i++) {
+    buf_local[i] = 0;
+  }
+  // переключаем терминал в неканонический режим
+  rk_mytermregime(0, 0, 1, 0, 1);
 
-// Функция для расчета изменения числа инфицированных
-double инфицированные(double K, double E, double I, double m, double B) {
-    return (K * E - B * I - m * I);
-}
+  // считываем первый введённый символ
+  fflush(stdin); // очистка потока ввода
+  read(fileno(stdin), buf_local, MIN_BUF_SIZE);
 
-// Функция для расчета изменения числа выздоровевших
-double выздоровевшие(double B, double I, double P, double E) {
-    return (B * I + P * E);
-}
-
-// Функция для расчета изменения числа умерших
-double умершие(double m, double I) {
-    return (m * I);
-}
-
-// Обновление значений SEIRD модели
-void обновить_SEIRD(double *S, double *E, double *I, double *R, double *D, double h, double aI, double aE, double K, double P, double m, double B, int N) {
-    double S1 = *S + (h * восприимчивые(aI, *S, *I, N, aE, *E));
-    double E1 = *E + (h * зараженные(aI, *S, *I, N, aE, *E, K, P));
-    double I1 = *I + (h * инфицированные(K, *E, *I, m, B));
-    
-    *S += h / 2 * (восприимчивые(aI, *S, *I, N, aE, *E) + восприимчивые(aI, S1, I1, N, aE, E1));
-    *E += h / 2 * (зараженные(aI, *S, *I, N, aE, *E, K, P) + зараженные(aI, S1, I1, N, aE, E1, K, P));
-    *I += h / 2 * (инфицированные(K, *E, *I, m, B) + инфицированные(K, E1, I1, m, B));
-    *R += h / 2 * (выздоровевшие(B, *I, P, *E) + выздоровевшие(B, I1, P, E1));
-    *D += h / 2 * (умершие(m, *I) + умершие(m, I1));
-}
-
-// Главная функция для моделирования SEIRD группы
-double модель_SEIRD(double S, double E, double I, double R, double D, int дни) {
-    const double aI = 0.999;
-    const double aE = 0.999;
-    const double K = 0.042;
-    const double P = 0.952;
-    const double m = 0.0188;
-    const double B = 0.999;
-    const double h = дни / 90.0;
-    
-    int N = S + E + I + R + D;
-    
-    for (int i = 0; i < дни; i++) {
-        обновить_SEIRD(&S, &E, &I, &R, &D, h, aI, aE, K, P, m, B, N);
+  if (!key) {
+    return -1;
+  }
+  // проверка введённого символа
+  if (buf_local[0] == '\033') { // Esc-последовательности
+    switch (buf_local[1]) {
+    case '\0':
+      *key = ESC_KEY;
+      break;
+    case '[':
+      switch (buf_local[2]) {
+      case 'A':
+        *key = UP_KEY;
+        break;
+      case 'B':
+        *key = DOWN_KEY;
+        break;
+      case 'C':
+        *key = RIGHT_KEY;
+        break;
+      case 'D':
+        *key = LEFT_KEY;
+        break;
+      default:
+        *key = NOTHING_KEY;
+        break;
+      }
+      break;
+    default:
+      *key = NOTHING_KEY;
+      break;
     }
-    
-    return (K * E) / 0.58;
+  } else {
+    if (buf_local[0] >= '0' && buf_local[0] <= '9') {
+      *key = buf_local[0] - '0';
+    } else if (buf_local[0] >= 'a' && buf_local[0] <= 'f') {
+      *key = buf_local[0] - 'a' + A_KEY;
+    } else if (buf_local[0] == '+') {
+      *key = PLUS_KEY;
+    } else if (buf_local[0] == '-') {
+      *key = MINUS_KEY;
+    } else {
+      *key = NOTHING_KEY;
+    }
+  }
+
+  // восстановление канонического режима
+  rk_mytermregime(1, 0, 0, 1, 1);
+  return 0;
 }
 
-int main() {
-    double E = 99;
-    double I = 0;
-    double R = 24;
-    double D = 0;
-    double S = 2798170 - E - R;
+int rk_mytermsave() {
+  if (tcgetattr(fileno(stdin), &save) != 0) {
+    return -1;
+  }
+  return 0;
+}
 
-    FILE *fd = fopen("1.txt", "w");
-    if (fd == NULL) {
-        perror("Ошибка при открытии файла");
-        return EXIT_FAILURE;
-    }
-
-    char buf[100];
-    for (int i = 1; i <= 90; i++) {
-        double результат = модель_SEIRD(S, E, I, R, D, i);
-        snprintf(buf, sizeof(buf), "%d %.6f\n", i, результат);
-        fwrite(buf, sizeof(char), strlen(buf), fd);
-    }
-
-    fclose(fd);
-    return 0;
+int rk_mytermrestore() {
+  if (tcsetattr(fileno(stdin), TCSAFLUSH, &save) != 0) {
+    return -1;
+  }
+  return 0;
 }
