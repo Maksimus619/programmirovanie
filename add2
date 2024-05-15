@@ -1,11 +1,8 @@
-#include "Lprint.h"
-#include "mySimpleComputer.h"
-#include "myTerm.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <time.h>
 #include <unistd.h>
+#include <stdio.h>
 
 enum keys {
   ESC_KEY = 16,
@@ -76,8 +73,8 @@ int rk_readkey(enum keys *key) {
   for (int i = 0; i < MIN_BUF_SIZE; i++) {
     buf_local[i] = 0;
   }
-  // переключаем терминал в неканонический режим
-  rk_mytermregime(0, 0, 1, 0, 1);
+  // переключаем терминал в канонический режим
+  rk_mytermregime(1, 0, 1, 1, 1);
 
   // считываем первый введённый символ
   fflush(stdin); // очистка потока ввода
@@ -107,92 +104,58 @@ int rk_readkey(enum keys *key) {
         *key = LEFT_KEY;
         break;
       default:
-        *key = INVALID_KEY;
+        *key = NOTHING_KEY;
         break;
       }
       break;
     default:
-      *key = INVALID_KEY;
+      *key = NOTHING_KEY;
       break;
     }
   } else {
-    switch (buf_local[0]) {
-    case 'L':
-      *key = L_KEY;
-      break;
-    case 'S':
-      *key = S_KEY;
-      break;
-    case 'R':
-      *key = R_KEY;
-      break;
-    case 'T':
-      *key = T_KEY;
-      break;
-    case 'I':
-      *key = I_KEY;
-      break;
-    case '+':
+    if (buf_local[0] >= '0' && buf_local[0] <= '9') {
+      *key = buf_local[0] - '0';
+    } else if (buf_local[0] >= 'a' && buf_local[0] <= 'f') {
+      *key = buf_local[0] - 'a' + A_KEY;
+    } else if (buf_local[0] == '+') {
       *key = PLUS_KEY;
-      break;
-    case '-':
+    } else if (buf_local[0] == '-') {
       *key = MINUS_KEY;
-      break;
-    case '0':
-      *key = ZERO_KEY;
-      break;
-    case '1':
-      *key = ONE_KEY;
-      break;
-    case '2':
-      *key = TWO_KEY;
-      break;
-    case '3':
-      *key = THREE_KEY;
-      break;
-    case '4':
-      *key = FOUR_KEY;
-      break;
-    case '5':
-      *key = FIVE_KEY;
-      break;
-    case '6':
-      *key = SIX_KEY;
-      break;
-    case '7':
-      *key = SEVEN_KEY;
-      break;
-    case '8':
-      *key = EIGHT_KEY;
-      break;
-    case '9':
-      *key = NINE_KEY;
-      break;
-    case 'A':
-      *key = A_KEY;
-      break;
-    case 'B':
-      *key = B_KEY;
-      break;
-    case 'C':
-      *key = C_KEY;
-      break;
-    case 'D':
-      *key = D_KEY;
-      break;
-    case 'E':
-      *key = E_KEY;
-      break;
-    case 'F':
-      *key = F_KEY;
-      break;
-    default:
-      *key = INVALID_KEY;
-      break;
+    } else {
+      *key = NOTHING_KEY;
     }
   }
 
-  // восстановление режима терминала
-  rk_mytermregime(1, 0, 1, 1, 1);
+  // восстановление канонического режима
+  rk_mytermregime(1, 0, 0, 1, 1);
+  return 0;
+}
+
+int rk_mytermsave() {
+  if (tcgetattr(fileno(stdin), &save) != 0) {
+    return -1;
+  }
+  return 0;
+}
+
+int rk_mytermrestore() {
+  if (tcsetattr(fileno(stdin), TCSAFLUSH, &save) != 0) {
+    return -1;
+  }
+  return 0;
+}
+
+int main() {
+  enum keys key;
+  while (1) {
+    printf("Press a key (ESC to exit): ");
+    rk_readkey(&key);
+    if (key == ESC_KEY) {
+      printf("ESC key pressed. Exiting...\n");
+      break;
+    } else {
+      printf("Key code: %d\n", key);
+    }
+  }
   return 0;
 }
