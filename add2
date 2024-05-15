@@ -1,66 +1,198 @@
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <fstream> // Для работы с файлами
+#include "Lprint.h"
+#include "mySimpleComputer.h"
+#include "myTerm.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <time.h>
+#include <unistd.h>
 
-// Параметры модели
-struct Params {
-    double alphaI, alphaE, beta, kappa, rho, mu, gamma;
-    int N; // Общее количество населения
+enum keys {
+  ESC_KEY = 16,
+  L_KEY,
+  S_KEY,
+  R_KEY,
+  T_KEY,
+  I_KEY,
+  F5_KEY,
+  F6_KEY,
+  UP_KEY,
+  DOWN_KEY,
+  LEFT_KEY,
+  RIGHT_KEY,
+  ENTER_KEY,
+  NOTHING_KEY,
+  INVALID_KEY,
+
+  ZERO_KEY = 0,
+  ONE_KEY,
+  TWO_KEY,
+  THREE_KEY,
+  FOUR_KEY,
+  FIVE_KEY,
+  SIX_KEY,
+  SEVEN_KEY,
+  EIGHT_KEY,
+  NINE_KEY,
+  A_KEY = 10,
+  B_KEY,
+  C_KEY,
+  D_KEY,
+  E_KEY,
+  F_KEY,
+
+  PLUS_KEY = 45,
+  MINUS_KEY = 43
 };
 
-// Основные переменные модели
-struct Variables {
-    double S, E, I, R, D;
-};
+#define MIN_BUF_SIZE 6
+char buffer[MIN_BUF_SIZE];
+struct termios save;
 
-// Функция для обновления переменных согласно SEIR-D модели
-void seirDModel(Variables& vars, const Params& params, double dt) {
-    double newS = vars.S - dt * (params.alphaI * vars.S * vars.I / params.N + params.alphaE * vars.S * vars.E / params.N) + dt * params.gamma * vars.R;
-    double newE = vars.E + dt * (params.alphaI * vars.S * vars.I / params.N + params.alphaE * vars.S * vars.E / params.N) - dt * (params.kappa + params.rho) * vars.E;
-    double newI = vars.I + dt * params.kappa * vars.E - dt * (params.beta + params.mu) * vars.I;
-    double newR = vars.R + dt * params.beta * vars.I + dt * params.rho * vars.E - dt * params.gamma * vars.R;
-    double newD = vars.D + dt * params.mu * vars.I;
-
-    // Обновление переменных
-    vars.S = newS;
-    vars.E = newE;
-    vars.I = newI;
-    vars.R = newR;
-    vars.D = newD;
+int rk_mytermregime(int regime, int vtime, int vmin, int echo, int sigint) {
+  struct termios curr;
+  tcgetattr(fileno(stdin), &curr);
+  // канонический режим
+  if (regime) {
+    curr.c_lflag |= ICANON;
+  }
+  // неканонический режим
+  else if (!regime) {
+    curr.c_lflag &= ~ICANON;
+    sigint ? (curr.c_lflag |= ISIG) : (curr.c_lflag &= ~ISIG);
+    echo ? (curr.c_lflag |= ECHO) : (curr.c_lflag &= ~ECHO);
+    curr.c_cc[VMIN] = vmin;
+    curr.c_cc[VTIME] = vtime;
+  }
+  if (tcsetattr(fileno(stdin), TCSAFLUSH, &curr) != 0) {
+    return -1;
+  }
+  return 0;
 }
 
-int main() {
-    // Инициализация параметров
-    Params params = {0.1, 0.1, 0.05, 0.05, 0.1, 0.01, 0.01, 1000000};
+int rk_readkey(enum keys *key) {
+  char buf_local[MIN_BUF_SIZE - 1];
+  // очистка буфера
+  for (int i = 0; i < MIN_BUF_SIZE; i++) {
+    buf_local[i] = 0;
+  }
+  // переключаем терминал в неканонический режим
+  rk_mytermregime(0, 0, 1, 0, 1);
 
-    // Инициализация начальных значений переменных
-    Variables vars = {999000, 800, 100, 100, 0};
+  // считываем первый введённый символ
+  fflush(stdin); // очистка потока ввода
+  read(fileno(stdin), buf_local, MIN_BUF_SIZE);
 
-    // Временной интервал и шаг по времени (dt)
-    double t = 0.0, T = 90.0, dt = 0.1;
-
-    // Открытие файла для записи
-    std::ofstream outFile("seird_data.csv");
-
-    // Проверка открытия файла
-    if (!outFile.is_open()) {
-        std::cerr << "Error opening file!" << std::endl;
-        return 1; // Завершаем программу с ошибкой
+  if (!key) {
+    return -1;
+  }
+  // проверка введённого символа
+  if (buf_local[0] == '\033') { // Esc-последовательности
+    switch (buf_local[1]) {
+    case '\0':
+      *key = ESC_KEY;
+      break;
+    case '[':
+      switch (buf_local[2]) {
+      case 'A':
+        *key = UP_KEY;
+        break;
+      case 'B':
+        *key = DOWN_KEY;
+        break;
+      case 'C':
+        *key = RIGHT_KEY;
+        break;
+      case 'D':
+        *key = LEFT_KEY;
+        break;
+      default:
+        *key = INVALID_KEY;
+        break;
+      }
+      break;
+    default:
+      *key = INVALID_KEY;
+      break;
     }
-
-    // Запись заголовков для столбцов
-    outFile << "Day,Susceptible,Exposed,Infected,Recovered,Deceased\n";
-
-    // Цикл по времени от 0 до 90 дней
-    for (int day = 0; t <= T; day++) {
-        outFile << t << "," << vars.S << "," << vars.E << "," << vars.I << "," << vars.R << "," << vars.D << "\n";
-        seirDModel(vars, params, dt);
-        t += dt;
+  } else {
+    switch (buf_local[0]) {
+    case 'L':
+      *key = L_KEY;
+      break;
+    case 'S':
+      *key = S_KEY;
+      break;
+    case 'R':
+      *key = R_KEY;
+      break;
+    case 'T':
+      *key = T_KEY;
+      break;
+    case 'I':
+      *key = I_KEY;
+      break;
+    case '+':
+      *key = PLUS_KEY;
+      break;
+    case '-':
+      *key = MINUS_KEY;
+      break;
+    case '0':
+      *key = ZERO_KEY;
+      break;
+    case '1':
+      *key = ONE_KEY;
+      break;
+    case '2':
+      *key = TWO_KEY;
+      break;
+    case '3':
+      *key = THREE_KEY;
+      break;
+    case '4':
+      *key = FOUR_KEY;
+      break;
+    case '5':
+      *key = FIVE_KEY;
+      break;
+    case '6':
+      *key = SIX_KEY;
+      break;
+    case '7':
+      *key = SEVEN_KEY;
+      break;
+    case '8':
+      *key = EIGHT_KEY;
+      break;
+    case '9':
+      *key = NINE_KEY;
+      break;
+    case 'A':
+      *key = A_KEY;
+      break;
+    case 'B':
+      *key = B_KEY;
+      break;
+    case 'C':
+      *key = C_KEY;
+      break;
+    case 'D':
+      *key = D_KEY;
+      break;
+    case 'E':
+      *key = E_KEY;
+      break;
+    case 'F':
+      *key = F_KEY;
+      break;
+    default:
+      *key = INVALID_KEY;
+      break;
     }
+  }
 
-    // Закрытие файла
-    outFile.close();
-
-    return 0;
+  // восстановление режима терминала
+  rk_mytermregime(1, 0, 1, 1, 1);
+  return 0;
 }
