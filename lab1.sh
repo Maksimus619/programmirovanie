@@ -1,6 +1,6 @@
 echo "=== Информация о системе ==="
-echo "Название ОС: $(lsb_release -d | cut -f2)"
-echo "Версия ОС: $(lsb_release -r | cut -f2)"
+echo "Название ОС: $(grep -E '^NAME=' /etc/os-release | awk -F= '{print $2}')"
+echo "Версия ОС: $(grep -E '^VERSION=' /etc/os-release | awk -F= '{print $2}')"
 echo "Версия ядра: $(uname -r)"
 echo "Архитектура: $(uname -m)"
 echo
@@ -8,7 +8,7 @@ echo
 echo "=== Информация о процессоре ==="
 echo "Модель процессора: $(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)"
 echo "Частота процессора: $(lscpu | grep 'CPU MHz' | awk -F: '{print $2}' | xargs)"
-echo "Количество ядер: $(lscpu | grep 'Thread(s) per core:' | awk -F: '{print $2}'| xargs)"
+echo "Количество ядер: $(lscpu | grep 'Core(s) per socket:' | awk -F: '{print $2}'| xargs)"
 echo "Размер кэш-памяти: $(lscpu | grep 'L1d cache' | awk -F: '{print $2}' | xargs)"
 echo "Количество доступных процессоров: $(lscpu | grep 'Socket(s):' | awk '{print $2}')"
 echo
