@@ -1,1 +1,51 @@
-grep 'VERSION=' /etc/os-release | cut -d '"' -f 2
+import os
+import socket
+import subprocess
+
+def show_pid_isolation():
+    print("=== PID Isolation ===")
+    # Выводим список процессов в контейнере
+    processes = subprocess.check_output(["ps", "aux"])
+    print(processes.decode())
+
+def show_ipc_isolation():
+    print("\n=== IPC Isolation ===")
+    # Проверяем, есть ли доступ к /dev/shm (общая память)
+    if os.path.exists("/dev/shm"):
+        print("Shared memory (/dev/shm) is available.")
+    else:
+        print("No access to shared memory.")
+
+def show_network_isolation():
+    print("\n=== Network Isolation ===")
+    # Выводим сетевые интерфейсы
+    network_info = subprocess.check_output(["ip", "addr"])
+    print(network_info.decode())
+
+def show_user_isolation():
+    print("\n=== User Isolation ===")
+    # Выводим информацию о текущем пользователе и его UID
+    uid = os.getuid()
+    user_info = subprocess.check_output(["id"])
+    print(f"Current User ID (UID): {uid}")
+    print(user_info.decode())
+
+def show_mount_isolation():
+    print("\n=== Mount Isolation ===")
+    # Выводим файловую систему контейнера (корневой каталог)
+    filesystem_info = subprocess.check_output(["df", "-h"])
+    print(filesystem_info.decode())
+
+def show_uts_isolation():
+    print("\n=== UTS Isolation (Hostname) ===")
+    # Выводим имя хоста в контейнере
+    hostname = socket.gethostname()
+    print(f"Hostname inside container: {hostname}")
+
+if __name__ == "__main__":
+    show_pid_isolation()
+    show_ipc_isolation()
+    show_network_isolation()
+    show_user_isolation()
+    show_mount_isolation()
+    show_uts_isolation()
