@@ -1,26 +1,27 @@
 #include <iostream>
 #include <string>
-#include <vector>
-#include <algorithm>
+#include <array>
 
-// Функция, которая преобразует символ в код Soundex
+// Функция, которая возвращает код Soundex для заданной буквы
 char getSoundexCode(char letter) {
     letter = tolower(letter);
-    std::vector<std::pair<char, int>> mapping = {
-        {'b', 1}, {'f', 1}, {'p', 1}, {'v', 1},
-        {'c', 2}, {'g', 2}, {'j', 2}, {'k', 2}, {'q', 2}, {'s', 2}, {'x', 2}, {'z', 2},
-        {'d', 3}, {'t', 3},
-        {'l', 4},
-        {'m', 5}, {'n', 5},
-        {'r', 6}
+    
+    // Массив, где каждая позиция соответствует коду символа a-z
+    static const std::array<char, 26> soundexMapping = {
+        /* a */ '0', /* b */ '1', /* c */ '2', /* d */ '3', /* e */ '0',
+        /* f */ '1', /* g */ '2', /* h */ '0', /* i */ '0', /* j */ '2',
+        /* k */ '2', /* l */ '4', /* m */ '5', /* n */ '5', /* o */ '0',
+        /* p */ '1', /* q */ '2', /* r */ '6', /* s */ '2', /* t */ '3',
+        /* u */ '0', /* v */ '1', /* w */ '0', /* x */ '2', /* y */ '0',
+        /* z */ '2'
     };
-
-    for (const auto& pair : mapping) {
-        if (pair.first == letter) {
-            return '0' + pair.second;  // Преобразуем число в символ
-        }
+    
+    // Проверка, что символ в пределах a-z
+    if (letter >= 'a' && letter <= 'z') {
+        return soundexMapping[letter - 'a'];
     }
-    return '0';  // Если буква не имеет соответствующего кода
+    
+    return '0';  // Если символ не входит в диапазон a-z
 }
 
 std::string soundex(const std::string& name) {
