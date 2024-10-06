@@ -1,1 +1,76 @@
-efef4
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <set>
+
+// Функция для разбиения слова на 3-граммы
+std::vector<std::string> generate_trigrams(const std::string& word) {
+    std::vector<std::string> trigrams;
+    if (word.length() < 3) return trigrams;
+
+    for (size_t i = 0; i <= word.length() - 3; ++i) {
+        trigrams.push_back(word.substr(i, 3));
+    }
+    return trigrams;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <dict_file_path>\n";
+        return 1;
+    }
+
+    std::ifstream dict_file(argv[1]);
+    if (!dict_file) {
+        std::cerr << "Error: Cannot open file " << argv[1] << "\n";
+        return 1;
+    }
+
+    std::unordered_map<std::string, std::set<std::string>> trigram_index;
+    std::string word;
+
+    // Построение обратного индекса для 3-грамм
+    while (dict_file >> word) {
+        std::vector<std::string> trigrams = generate_trigrams(word);
+        for (const auto& trigram : trigrams) {
+            trigram_index[trigram].insert(word);
+        }
+    }
+
+    std::string query;
+    std::cout << "Enter a word to search (or ':q' to quit): \n";
+    while (std::cin >> query && query != ":q") {
+        std::vector<std::string> query_trigrams = generate_trigrams(query);
+        std::unordered_map<std::string, int> candidate_counts;
+
+        // Поиск кандидатов по 3-граммам запроса
+        for (const auto& trigram : query_trigrams) {
+            if (trigram_index.find(trigram) != trigram_index.end()) {
+                for (const auto& candidate : trigram_index[trigram]) {
+                    ++candidate_counts[candidate];
+                }
+            }
+        }
+
+        // Нахождение слова с максимальным количеством совпадений
+        int max_count = 0;
+        for (const auto& [candidate, count] : candidate_counts) {
+            if (count > max_count) {
+                max_count = count;
+            }
+        }
+
+        // Вывод кандидатов с максимальным количеством совпадений
+        std::cout << "Candidates: \n";
+        for (const auto& [candidate, count] : candidate_counts) {
+            if (count == max_count) {
+                std::cout << candidate << "\n";
+            }
+        }
+    }
+
+    return 0;
+}
