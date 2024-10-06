@@ -1,1 +1,55 @@
-er1e1
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) {
+    int rank, size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    char sbuf_1kb[1024];          // Сообщение размером 1 KB
+    char sbuf_1mb[1024 * 1024];   // Сообщение размером 1 MB
+    char* rbuf_1kb = NULL;        // Буфер приема для процесса 0
+    char* rbuf_1mb = NULL;        // Буфер приема для процесса 0
+
+    // Заполнение буфера на каждом процессе
+    for (int i = 0; i < sizeof(sbuf_1kb); i++) {
+        sbuf_1kb[i] = 'A' + rank;
+    }
+    for (int i = 0; i < sizeof(sbuf_1mb); i++) {
+        sbuf_1mb[i] = 'B' + rank;
+    }
+
+    // Выделение памяти для приемного буфера на процессе 0
+    if (rank == 0) {
+        rbuf_1kb = (char*)malloc(size * sizeof(sbuf_1kb));
+        rbuf_1mb = (char*)malloc(size * sizeof(sbuf_1mb));
+    }
+
+    // Измерение времени выполнения на процессе 0
+    double start_time, end_time;
+    if (rank == 0) {
+        start_time = MPI_Wtime();
+    }
+
+    // Коллекторный прием сообщений размером 1 KB
+    MPI_Gather(sbuf_1kb, 1024, MPI_CHAR, rbuf_1kb, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    // Коллекторный прием сообщений размером 1 MB
+    MPI_Gather(sbuf_1mb, 1024 * 1024, MPI_CHAR, rbuf_1mb, 1024 * 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    // Измерение времени выполнения
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        printf("Gather total time: %f seconds\n", end_time - start_time);
+    }
+
+    // Освобождение памяти на процессе 0
+    if (rank == 0) {
+        free(rbuf_1kb);
+        free(rbuf_1mb);
+    }
+
+    MPI_Finalize();
+    return 0;
+}
