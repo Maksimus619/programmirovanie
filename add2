@@ -1,1 +1,56 @@
-efef3
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <algorithm>
+#include <chrono>
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <file_path>\n";
+        return 1;
+    }
+
+    std::ifstream file(argv[1]);
+    if (!file) {
+        std::cerr << "Error: Cannot open file " << argv[1] << "\n";
+        return 1;
+    }
+
+    std::map<std::string, int> word_freq;
+    std::string word;
+
+    // Начало измерения времени заполнения словаря
+    auto start_fill = std::chrono::steady_clock::now();
+    while (file >> word) {
+        ++word_freq[word];
+    }
+    auto end_fill = std::chrono::steady_clock::now();
+    auto fill_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_fill - start_fill);
+
+    // Конвертируем частотный словарь в вектор для сортировки
+    std::vector<std::pair<std::string, int>> word_vector(word_freq.begin(), word_freq.end());
+
+    // Начало измерения времени сортировки
+    auto start_sort = std::chrono::steady_clock::now();
+    std::sort(word_vector.begin(), word_vector.end(), [](const auto& a, const auto& b) {
+        if (a.second == b.second) {
+            return a.first < b.first;
+        }
+        return a.second > b.second;
+    });
+    auto end_sort = std::chrono::steady_clock::now();
+    auto sort_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_sort - start_sort);
+
+    // Выводим топ-10 наиболее частых слов
+    std::cout << "TOP-10 words:\n";
+    for (size_t i = 0; i < 10 && i < word_vector.size(); ++i) {
+        std::cout << word_vector[i].second << " " << word_vector[i].first << "\n";
+    }
+
+    // Выводим время заполнения и сортировки
+    std::cout << "build: " << fill_duration.count() << " microseconds\n";
+    std::cout << "sort: " << sort_duration.count() << " microseconds\n";
+
+    return 0;
+}
