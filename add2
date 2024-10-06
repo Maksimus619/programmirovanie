@@ -1,56 +1,76 @@
 #include <iostream>
 #include <fstream>
-#include <map>
+#include <unordered_map>
 #include <vector>
+#include <string>
 #include <algorithm>
-#include <chrono>
+#include <set>
+
+// Функция для разбиения слова на 3-граммы
+std::vector<std::string> generate_trigrams(const std::string& word) {
+    std::vector<std::string> trigrams;
+    if (word.length() < 3) return trigrams;
+
+    for (size_t i = 0; i <= word.length() - 3; ++i) {
+        trigrams.push_back(word.substr(i, 3));
+    }
+    return trigrams;
+}
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <file_path>\n";
+        std::cerr << "Usage: " << argv[0] << " <dict_file_path>\n";
         return 1;
     }
 
-    std::ifstream file(argv[1]);
-    if (!file) {
+    std::ifstream dict_file(argv[1]);
+    if (!dict_file) {
         std::cerr << "Error: Cannot open file " << argv[1] << "\n";
         return 1;
     }
 
-    std::map<std::string, int> word_freq;
+    std::unordered_map<std::string, std::set<std::string>> trigram_index;
     std::string word;
 
-    // Начало измерения времени заполнения словаря
-    auto start_fill = std::chrono::steady_clock::now();
-    while (file >> word) {
-        ++word_freq[word];
-    }
-    auto end_fill = std::chrono::steady_clock::now();
-    auto fill_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_fill - start_fill);
-
-    // Конвертируем частотный словарь в вектор для сортировки
-    std::vector<std::pair<std::string, int>> word_vector(word_freq.begin(), word_freq.end());
-
-    // Начало измерения времени сортировки
-    auto start_sort = std::chrono::steady_clock::now();
-    std::sort(word_vector.begin(), word_vector.end(), [](const auto& a, const auto& b) {
-        if (a.second == b.second) {
-            return a.first < b.first;
+    // Построение обратного индекса для 3-грамм
+    while (dict_file >> word) {
+        const std::vector<std::string> trigrams = generate_trigrams(word);
+        for (const auto& trigram : trigrams) {
+            trigram_index[trigram].insert(word);
         }
-        return a.second > b.second;
-    });
-    auto end_sort = std::chrono::steady_clock::now();
-    auto sort_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_sort - start_sort);
-
-    // Выводим топ-10 наиболее частых слов
-    std::cout << "TOP-10 words:\n";
-    for (size_t i = 0; i < 10 && i < word_vector.size(); ++i) {
-        std::cout << word_vector[i].second << " " << word_vector[i].first << "\n";
     }
 
-    // Выводим время заполнения и сортировки
-    std::cout << "build: " << fill_duration.count() << " microseconds\n";
-    std::cout << "sort: " << sort_duration.count() << " microseconds\n";
+    std::string query;
+    std::cout << "Enter a word to search (or ':q' to quit): \n";
+    while (std::cin >> query && query != ":q") {
+        const std::vector<std::string> query_trigrams = generate_trigrams(query);
+        std::unordered_map<std::string, int> candidate_counts;
+
+        // Поиск кандидатов по 3-граммам запроса
+        for (const auto& trigram : query_trigrams) {
+            if (trigram_index.find(trigram) != trigram_index.end()) {
+                for (const auto& candidate : trigram_index[trigram]) {
+                    ++candidate_counts[candidate];
+                }
+            }
+        }
+
+        // Нахождение слова с максимальным количеством совпадений
+        int max_count = 0;
+        for (const auto& [candidate, count] : candidate_counts) {
+            if (count > max_count) {
+                max_count = count;
+            }
+        }
+
+        // Вывод кандидатов с максимальным количеством совпадений
+        std::cout << "Candidates: \n";
+        for (const auto& [candidate, count] : candidate_counts) {
+            if (count == max_count) {
+                std::cout << candidate << "\n";
+            }
+        }
+    }
 
     return 0;
 }
