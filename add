@@ -1,5 +1,6 @@
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char** argv) {
     int rank, size;
@@ -7,28 +8,12 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    char message[1024 * 1024];  // Максимальный размер сообщения 1 MB
-    MPI_Status status;
+    char* sendbuf = (char*)malloc(size * 1024 * sizeof(char));  // Буфер отправки для каждого процесса (размер сообщения 1 KB)
+    char* recvbuf = (char*)malloc(size * 1024 * sizeof(char));  // Буфер приема для каждого процесса (размер сообщения 1 KB)
 
-    // Повторение передачи сообщений p - 1 раз
-    for (int i = 0; i < size - 1; i++) {
-        int send_to = (rank + 1) % size;
-        int recv_from = (rank - 1 + size) % size;
-
-        if (i == 0) {
-            // Заполнение сообщения для начального обмена
-            if (rank == 0) {
-                for (int j = 0; j < sizeof(message); j++) {
-                    message[j] = 'A';
-                }
-            }
-        }
-
-        // Отправка сообщения соседнему процессу
-        MPI_Send(message, 1024, MPI_CHAR, send_to, 0, MPI_COMM_WORLD);
-
-        // Прием сообщения от предыдущего процесса
-        MPI_Recv(message, 1024, MPI_CHAR, recv_from, 0, MPI_COMM_WORLD, &status);
+    // Заполнение буфера на каждом процессе
+    for (int i = 0; i < size * 1024; i++) {
+        sendbuf[i] = 'A' + rank;
     }
 
     // Измерение времени выполнения на процессе 0
@@ -37,28 +22,28 @@ int main(int argc, char** argv) {
         start_time = MPI_Wtime();
     }
 
-    for (int i = 0; i < size - 1; i++) {
-        int send_to = (rank + 1) % size;
-        int recv_from = (rank - 1 + size) % size;
+    // All-to-All обмен с использованием неблокирующих функций MPI_Isend, MPI_Irecv и MPI_Waitall
+    MPI_Request* requests = (MPI_Request*)malloc(2 * size * sizeof(MPI_Request));
+    MPI_Status* statuses = (MPI_Status*)malloc(2 * size * sizeof(MPI_Status));
 
-        // Отправка и прием сообщений разного размера
-        MPI_Sendrecv(message, 1, MPI_CHAR, send_to, 0,
-                     message, 1, MPI_CHAR, recv_from, 0,
-                     MPI_COMM_WORLD, &status);
-
-        MPI_Sendrecv(message, 1024, MPI_CHAR, send_to, 0,
-                     message, 1024, MPI_CHAR, recv_from, 0,
-                     MPI_COMM_WORLD, &status);
-
-        MPI_Sendrecv(message, 1024 * 1024, MPI_CHAR, send_to, 0,
-                     message, 1024 * 1024, MPI_CHAR, recv_from, 0,
-                     MPI_COMM_WORLD, &status);
+    for (int i = 0; i < size; i++) {
+        MPI_Isend(&sendbuf[i * 1024], 1024, MPI_CHAR, i, 0, MPI_COMM_WORLD, &requests[i]);
+        MPI_Irecv(&recvbuf[i * 1024], 1024, MPI_CHAR, i, 0, MPI_COMM_WORLD, &requests[size + i]);
     }
 
+    MPI_Waitall(2 * size, requests, statuses);
+
+    // Измерение времени выполнения
     if (rank == 0) {
         end_time = MPI_Wtime();
-        printf("Total time for communication: %f seconds\n", end_time - start_time);
+        printf("All-to-All total time: %f seconds\n", end_time - start_time);
     }
+
+    // Освобождение памяти
+    free(sendbuf);
+    free(recvbuf);
+    free(requests);
+    free(statuses);
 
     MPI_Finalize();
     return 0;
