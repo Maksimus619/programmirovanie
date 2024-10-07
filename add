@@ -17,13 +17,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::unordered_map<std::string, int> word_freq;
+    std::vector<std::string> words;
     std::string word;
+
+    // Чтение слов из файла в вектор
+    while (file >> word) {
+        words.push_back(word);
+    }
+
+    std::unordered_map<std::string, int> word_freq;
 
     // Начало измерения времени заполнения словаря
     auto start_fill = std::chrono::steady_clock::now();
-    while (file >> word) {
-        ++word_freq[word];
+    for (const auto& w : words) {
+        ++word_freq[w];
     }
     auto end_fill = std::chrono::steady_clock::now();
     auto fill_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_fill - start_fill);
