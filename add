@@ -1,63 +1,64 @@
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <vector>
-#include <algorithm>
-#include <chrono>
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <file_path>\n";
-        return 1;
+#define MB (1024 * 1024)   // Определяем размер 1 МБ
+#define KB 1024            // Определяем размер 1 КБ
+#define BYTE 1             // Определяем размер 1 байт
+
+int main(int argc, char *argv[]) {
+    int rank, size, prev, next;
+    char *message;
+    MPI_Status status;
+
+    // Инициализация MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Получаем ранг текущего процесса
+    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Получаем количество процессов
+
+    // Определяем соседей в кольце
+    prev = (rank - 1 + size) % size;  // Предыдущий процесс
+    next = (rank + 1) % size;         // Следующий процесс
+
+    // Выделяем память под сообщение (1 МБ)
+    message = (char *)malloc(MB * sizeof(char));
+
+    // Инициализация сообщения (например, заполняем нулями)
+    for (int i = 0; i < MB; i++) {
+        message[i] = 0;
     }
 
-    std::ifstream file(argv[1]);
-    if (!file) {
-        std::cerr << "Error: Cannot open file " << argv[1] << "\n";
-        return 1;
-    }
+    // Переменная для измерения времени
+    double start_time, end_time;
 
-    std::vector<std::string> words;
-    std::string word;
+    // Начало обмена
+    start_time = MPI_Wtime();
 
-    // Чтение слов из файла в вектор
-    while (file >> word) {
-        words.push_back(word);
-    }
-
-    std::unordered_map<std::string, int> word_freq;
-
-    // Начало измерения времени заполнения словаря
-    auto start_fill = std::chrono::steady_clock::now();
-    for (const auto& w : words) {
-        ++word_freq[w];
-    }
-    auto end_fill = std::chrono::steady_clock::now();
-    auto fill_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_fill - start_fill);
-
-    // Конвертируем частотный словарь в вектор для сортировки
-    std::vector<std::pair<std::string, int>> word_vector(word_freq.begin(), word_freq.end());
-
-    // Начало измерения времени сортировки
-    auto start_sort = std::chrono::steady_clock::now();
-    std::sort(word_vector.begin(), word_vector.end(), [](const auto& a, const auto& b) {
-        if (a.second == b.second) {
-            return a.first < b.first;
+    for (int i = 0; i < size - 1; i++) {
+        if (rank % 2 == 0) {
+            // Четные процессы сначала отправляют, потом получают
+            MPI_Send(message, MB, MPI_CHAR, next, 0, MPI_COMM_WORLD);
+            MPI_Recv(message, MB, MPI_CHAR, prev, 0, MPI_COMM_WORLD, &status);
+        } else {
+            // Нечетные процессы сначала получают, потом отправляют
+            MPI_Recv(message, MB, MPI_CHAR, prev, 0, MPI_COMM_WORLD, &status);
+            MPI_Send(message, MB, MPI_CHAR, next, 0, MPI_COMM_WORLD);
         }
-        return a.second > b.second;
-    });
-    auto end_sort = std::chrono::steady_clock::now();
-    auto sort_duration = std::chrono::duration_cast<std::chrono::microseconds>(end_sort - start_sort);
-
-    // Выводим топ-10 наиболее частых слов
-    std::cout << "TOP-10 words:\n";
-    for (size_t i = 0; i < 10 && i < word_vector.size(); ++i) {
-        std::cout << word_vector[i].second << " " << word_vector[i].first << "\n";
     }
 
-    // Выводим время заполнения и сортировки
-    std::cout << "build: " << fill_duration.count() << " microseconds\n";
-    std::cout << "sort: " << sort_duration.count() << " microseconds\n";
+    // Конец обмена
+    end_time = MPI_Wtime();
+
+    // Вывод времени выполнения на процессе 0
+    if (rank == 0) {
+        printf("Время выполнения обмена: %f секунд\n", end_time - start_time);
+    }
+
+    // Освобождаем память
+    free(message);
+
+    // Завершение работы MPI
+    MPI_Finalize();
 
     return 0;
 }
