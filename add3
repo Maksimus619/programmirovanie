@@ -1,76 +1,61 @@
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <set>
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-// Функция для разбиения слова на 3-граммы
-std::vector<std::string> generate_trigrams(const std::string& word) {
-    std::vector<std::string> trigrams;
-    if (word.length() < 3) return trigrams;
+#define MB (1024 * 1024)   // Определяем размер 1 МБ
+#define KB 1024            // Определяем размер 1 КБ
+#define BYTE 1             // Определяем размер 1 байт
 
-    for (size_t i = 0; i <= word.length() - 3; ++i) {
-        trigrams.push_back(word.substr(i, 3));
-    }
-    return trigrams;
-}
+int main(int argc, char *argv[]) {
+    int rank, size;
+    char *sendbuf, *recvbuf;
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <dict_file_path>\n";
-        return 1;
-    }
+    // Инициализация MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Получаем ранг текущего процесса
+    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Получаем количество процессов
 
-    std::ifstream dict_file(argv[1]);
-    if (!dict_file) {
-        std::cerr << "Error: Cannot open file " << argv[1] << "\n";
-        return 1;
+    // Определяем размер сообщения
+    int message_size = MB;
+
+    // Выделение памяти под отправляемое сообщение (каждый процесс отправляет сообщение)
+    sendbuf = (char *)malloc(message_size * sizeof(char));
+
+    // Инициализация отправляемого сообщения (например, заполняем нулями)
+    for (int i = 0; i < message_size; i++) {
+        sendbuf[i] = rank;  // Каждый процесс заполняет свой буфер своим рангом
     }
 
-    std::unordered_map<std::string, std::set<std::string>> trigram_index;
-    std::string word;
-
-    // Построение обратного индекса для 3-грамм
-    while (dict_file >> word) {
-        std::vector<std::string> trigrams = generate_trigrams(word);
-        for (const auto& trigram : trigrams) {
-            trigram_index[trigram].insert(word);
-        }
+    // Выделение памяти под приемное сообщение только в процессе 0
+    if (rank == 0) {
+        recvbuf = (char *)malloc(message_size * size * sizeof(char));
     }
 
-    std::string query;
-    std::cout << "Enter a word to search (or ':q' to quit): \n";
-    while (std::cin >> query && query != ":q") {
-        std::vector<std::string> query_trigrams = generate_trigrams(query);
-        std::unordered_map<std::string, int> candidate_counts;
+    // Переменная для измерения времени
+    double start_time, end_time;
 
-        // Поиск кандидатов по 3-граммам запроса
-        for (const auto& trigram : query_trigrams) {
-            if (trigram_index.find(trigram) != trigram_index.end()) {
-                for (const auto& candidate : trigram_index[trigram]) {
-                    ++candidate_counts[candidate];
-                }
-            }
-        }
+    // Начало операции сборки
+    start_time = MPI_Wtime();
 
-        // Нахождение слова с максимальным количеством совпадений
-        int max_count = 0;
-        for (const auto& [candidate, count] : candidate_counts) {
-            if (count > max_count) {
-                max_count = count;
-            }
-        }
+    // Сборка сообщений всех процессов в процесс 0
+    MPI_Gather(sendbuf, message_size, MPI_CHAR, recvbuf, message_size, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-        // Вывод кандидатов с максимальным количеством совпадений
-        std::cout << "Candidates: \n";
-        for (const auto& [candidate, count] : candidate_counts) {
-            if (count == max_count) {
-                std::cout << candidate << "\n";
-            }
-        }
+    // Конец операции сборки
+    end_time = MPI_Wtime();
+
+    // Вывод времени выполнения на процессе 0
+    if (rank == 0) {
+        printf("Время выполнения операции сборки: %f секунд\n", end_time - start_time);
     }
+
+    // Освобождаем память
+    free(sendbuf);
+    if (rank == 0) {
+        free(recvbuf);
+    }
+
+    // Завершение работы MPI
+    MPI_Finalize();
 
     return 0;
 }
