@@ -1,76 +1,52 @@
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <set>
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-// Функция для разбиения слова на 3-граммы
-std::vector<std::string> generate_trigrams(const std::string& word) {
-    std::vector<std::string> trigrams;
-    if (word.length() < 3) return trigrams;
+#define MB (1024 * 1024)   // Определяем размер 1 МБ
+#define KB 1024            // Определяем размер 1 КБ
+#define BYTE 1             // Определяем размер 1 байт
 
-    for (size_t i = 0; i <= word.length() - 3; ++i) {
-        trigrams.push_back(word.substr(i, 3));
-    }
-    return trigrams;
-}
+int main(int argc, char *argv[]) {
+    int rank, size;
+    char *message;
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <dict_file_path>\n";
-        return 1;
-    }
+    // Инициализация MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Получаем ранг текущего процесса
+    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Получаем количество процессов
 
-    std::ifstream dict_file(argv[1]);
-    if (!dict_file) {
-        std::cerr << "Error: Cannot open file " << argv[1] << "\n";
-        return 1;
-    }
+    // Выделение памяти под сообщение (1 МБ)
+    message = (char *)malloc(MB * sizeof(char));
 
-    std::unordered_map<std::string, std::set<std::string>> trigram_index;
-    std::string word;
-
-    // Построение обратного индекса для 3-грамм
-    while (dict_file >> word) {
-        const std::vector<std::string> trigrams = generate_trigrams(word);
-        for (const auto& trigram : trigrams) {
-            trigram_index[trigram].insert(word);
+    // Инициализация сообщения в процессе 0 (например, заполняем нулями)
+    if (rank == 0) {
+        for (int i = 0; i < MB; i++) {
+            message[i] = 0;
         }
     }
 
-    std::string query;
-    std::cout << "Enter a word to search (or ':q' to quit): \n";
-    while (std::cin >> query && query != ":q") {
-        const std::vector<std::string> query_trigrams = generate_trigrams(query);
-        std::unordered_map<std::string, int> candidate_counts;
+    // Переменная для измерения времени
+    double start_time, end_time;
 
-        // Поиск кандидатов по 3-граммам запроса
-        for (const auto& trigram : query_trigrams) {
-            if (trigram_index.find(trigram) != trigram_index.end()) {
-                for (const auto& candidate : trigram_index[trigram]) {
-                    ++candidate_counts[candidate];
-                }
-            }
-        }
+    // Начало трансляционной передачи
+    start_time = MPI_Wtime();
 
-        // Нахождение слова с максимальным количеством совпадений
-        int max_count = 0;
-        for (const auto& [candidate, count] : candidate_counts) {
-            if (count > max_count) {
-                max_count = count;
-            }
-        }
+    // Передача сообщения от процесса 0 всем остальным процессам
+    MPI_Bcast(message, MB, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-        // Вывод кандидатов с максимальным количеством совпадений
-        std::cout << "Candidates: \n";
-        for (const auto& [candidate, count] : candidate_counts) {
-            if (count == max_count) {
-                std::cout << candidate << "\n";
-            }
-        }
+    // Конец трансляционной передачи
+    end_time = MPI_Wtime();
+
+    // Вывод времени выполнения на процессе 0
+    if (rank == 0) {
+        printf("Время выполнения трансляции: %f секунд\n", end_time - start_time);
     }
+
+    // Освобождаем память
+    free(message);
+
+    // Завершение работы MPI
+    MPI_Finalize();
 
     return 0;
 }
