@@ -1,61 +1,45 @@
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
+// mines.cpp
+#include "Board.hpp"
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
 
-#define MB (1024 * 1024)   // Определяем размер 1 МБ
-#define KB 1024            // Определяем размер 1 КБ
-#define BYTE 1             // Определяем размер 1 байт
+int main() {
+    int rows, cols, mines_count;
+    std::cout << "Enter rows, columns and number of mines: ";
+    std::cin >> rows >> cols >> mines_count;
 
-int main(int argc, char *argv[]) {
-    int rank, size;
-    char *sendbuf, *recvbuf;
-
-    // Инициализация MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Получаем ранг текущего процесса
-    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Получаем количество процессов
-
-    // Определяем размер сообщения
-    int message_size = MB;
-
-    // Выделение памяти под отправляемое сообщение (каждый процесс отправляет сообщение)
-    sendbuf = (char *)malloc(message_size * sizeof(char));
-
-    // Инициализация отправляемого сообщения (например, заполняем нулями)
-    for (int i = 0; i < message_size; i++) {
-        sendbuf[i] = rank;  // Каждый процесс заполняет свой буфер своим рангом
+    std::vector<std::pair<int, int>> mines_coords;
+    std::cout << "Enter mine coordinates (row col):" << std::endl;
+    for (int i = 0; i < mines_count; ++i) {
+        int r, c;
+        std::cin >> r >> c;
+        mines_coords.emplace_back(r, c);
     }
 
-    // Выделение памяти под приемное сообщение только в процессе 0
-    if (rank == 0) {
-        recvbuf = (char *)malloc(message_size * size * sizeof(char));
+    Board board(rows, cols, mines_coords);
+    std::string command;
+    while (true) {
+        board.print(std::cout);
+        std::cout << "Enter command (open/flag row col / exit): ";
+        std::cin >> command;
+
+        if (command == "exit") {
+            break;
+        } else if (command == "open") {
+            int r, c;
+            std::cin >> r >> c;
+            board.open(r, c);
+            if (board.is_winner()) {
+                std::cout << "You win!" << std::endl;
+                break;
+            }
+        } else if (command == "flag") {
+            int r, c;
+            std::cin >> r >> c;
+            board.flag(r, c);
+        }
     }
-
-    // Переменная для измерения времени
-    double start_time, end_time;
-
-    // Начало операции сборки
-    start_time = MPI_Wtime();
-
-    // Сборка сообщений всех процессов в процесс 0
-    MPI_Gather(sendbuf, message_size, MPI_CHAR, recvbuf, message_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-    // Конец операции сборки
-    end_time = MPI_Wtime();
-
-    // Вывод времени выполнения на процессе 0
-    if (rank == 0) {
-        printf("Время выполнения операции сборки: %f секунд\n", end_time - start_time);
-    }
-
-    // Освобождаем память
-    free(sendbuf);
-    if (rank == 0) {
-        free(recvbuf);
-    }
-
-    // Завершение работы MPI
-    MPI_Finalize();
-
     return 0;
 }
