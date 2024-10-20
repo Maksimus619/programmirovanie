@@ -1,52 +1,93 @@
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
+// Board.cpp
+#include "Board.hpp"
+#include <iostream>
+#include <cstdlib>
 
-#define MB (1024 * 1024)   // Определяем размер 1 МБ
-#define KB 1024            // Определяем размер 1 КБ
-#define BYTE 1             // Определяем размер 1 байт
+Board::Board(size_t rows, size_t cols, const std::vector<std::pair<int, int>>& mines_coords)
+    : rows_(rows), cols_(cols), grid_(rows, std::vector<Cell>(cols)) {
+    set_mines(mines_coords);
+}
 
-int main(int argc, char *argv[]) {
-    int rank, size;
-    char *message;
-
-    // Инициализация MPI
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Получаем ранг текущего процесса
-    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Получаем количество процессов
-
-    // Выделение памяти под сообщение (1 МБ)
-    message = (char *)malloc(MB * sizeof(char));
-
-    // Инициализация сообщения в процессе 0 (например, заполняем нулями)
-    if (rank == 0) {
-        for (int i = 0; i < MB; i++) {
-            message[i] = 0;
+void Board::set_mines(const std::vector<std::pair<int, int>>& mines_coords) {
+    for (const auto& coord : mines_coords) {
+        int row = coord.first;
+        int col = coord.second;
+        if (row < rows_ && col < cols_) {
+            grid_[row][col].has_mine_ = true;
         }
     }
+}
 
-    // Переменная для измерения времени
-    double start_time, end_time;
+int Board::count_mines_around(int row, int col) {
+    int count = 0;
+    for (int r = row - 1; r <= row + 1; ++r) {
+        for (int c = col - 1; c <= col + 1; ++c) {
+            if (r >= 0 && r < rows_ && c >= 0 && c < cols_ && grid_[r][c].has_mine_) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
 
-    // Начало трансляционной передачи
-    start_time = MPI_Wtime();
-
-    // Передача сообщения от процесса 0 всем остальным процессам
-    MPI_Bcast(message, MB, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-    // Конец трансляционной передачи
-    end_time = MPI_Wtime();
-
-    // Вывод времени выполнения на процессе 0
-    if (rank == 0) {
-        printf("Время выполнения трансляции: %f секунд\n", end_time - start_time);
+void Board::open(int row, int col) {
+    if (row < 0 || row >= rows_ || col < 0 || col >= cols_ || grid_[row][col].is_opened_) {
+        return;
     }
 
-    // Освобождаем память
-    free(message);
+    grid_[row][col].is_opened_ = true;
 
-    // Завершение работы MPI
-    MPI_Finalize();
+    if (grid_[row][col].has_mine_) {
+        std::cout << "You lose!" << std::endl;
+        return;
+    }
 
-    return 0;
+    grid_[row][col].mines_count_ = count_mines_around(row, col);
+    if (grid_[row][col].mines_count_ == 0) {
+        reveal_adjacent_cells(row, col);
+    }
+}
+
+void Board::reveal_adjacent_cells(int row, int col) {
+    for (int r = row - 1; r <= row + 1; ++r) {
+        for (int c = col - 1; c <= col + 1; ++c) {
+            open(r, c);
+        }
+    }
+}
+
+void Board::flag(int row, int col) {
+    if (row >= 0 && row < rows_ && col >= 0 && col < cols_) {
+        grid_[row][col].has_flag_ = !grid_[row][col].has_flag_;
+    }
+}
+
+void Board::print(std::ostream& output_stream) {
+    for (size_t r = 0; r < rows_; ++r) {
+        for (size_t c = 0; c < cols_; ++c) {
+            if (grid_[r][c].is_opened_) {
+                if (grid_[r][c].has_mine_) {
+                    output_stream << "* ";
+                } else {
+                    output_stream << grid_[r][c].mines_count_ << " ";
+                }
+            } else if (grid_[r][c].has_flag_) {
+                output_stream << "F ";
+            } else {
+                output_stream << "# ";
+            }
+        }
+        output_stream << std::endl;
+    }
+}
+
+bool Board::is_winner() {
+    for (size_t r = 0; r < rows_; ++r) {
+        for (size_t c = 0; c < cols_; ++c) {
+            if (!grid_[r][c].is_opened_ && !grid_[r][c].has_mine_) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
