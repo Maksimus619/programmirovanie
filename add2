@@ -1,93 +1,45 @@
-// Board.cpp
+// mines.cpp
 #include "Board.hpp"
 #include <iostream>
-#include <cstdlib>
+#include <sstream>
+#include <vector>
+#include <string>
 
-Board::Board(size_t rows, size_t cols, const std::vector<std::pair<int, int>>& mines_coords)
-    : rows_(rows), cols_(cols), grid_(rows, std::vector<Cell>(cols)) {
-    set_mines(mines_coords);
-}
+int main() {
+    int rows, cols, mines_count;
+    std::cout << "Enter rows, columns and number of mines: ";
+    std::cin >> rows >> cols >> mines_count;
 
-void Board::set_mines(const std::vector<std::pair<int, int>>& mines_coords) {
-    for (const auto& coord : mines_coords) {
-        int row = coord.first;
-        int col = coord.second;
-        if (row < rows_ && col < cols_) {
-            grid_[row][col].has_mine_ = true;
-        }
+    std::vector<std::pair<int, int>> mines_coords;
+    std::cout << "Enter mine coordinates (row col):" << std::endl;
+    for (int i = 0; i < mines_count; ++i) {
+        int r, c;
+        std::cin >> r >> c;
+        mines_coords.emplace_back(r, c);
     }
-}
 
-int Board::count_mines_around(int row, int col) {
-    int count = 0;
-    for (int r = row - 1; r <= row + 1; ++r) {
-        for (int c = col - 1; c <= col + 1; ++c) {
-            if (r >= 0 && r < rows_ && c >= 0 && c < cols_ && grid_[r][c].has_mine_) {
-                count++;
+    Board board(rows, cols, mines_coords);
+    std::string command;
+    while (true) {
+        board.print(std::cout);
+        std::cout << "Enter command (open/flag row col / exit): ";
+        std::cin >> command;
+
+        if (command == "exit") {
+            break;
+        } else if (command == "open") {
+            int r, c;
+            std::cin >> r >> c;
+            board.open(r, c);
+            if (board.is_winner()) {
+                std::cout << "You win!\n"; // Изменение здесь
+                break;
             }
+        } else if (command == "flag") {
+            int r, c;
+            std::cin >> r >> c;
+            board.flag(r, c);
         }
     }
-    return count;
-}
-
-void Board::open(int row, int col) {
-    if (row < 0 || row >= rows_ || col < 0 || col >= cols_ || grid_[row][col].is_opened_) {
-        return;
-    }
-
-    grid_[row][col].is_opened_ = true;
-
-    if (grid_[row][col].has_mine_) {
-        std::cout << "You lose!" << std::endl;
-        return;
-    }
-
-    grid_[row][col].mines_count_ = count_mines_around(row, col);
-    if (grid_[row][col].mines_count_ == 0) {
-        reveal_adjacent_cells(row, col);
-    }
-}
-
-void Board::reveal_adjacent_cells(int row, int col) {
-    for (int r = row - 1; r <= row + 1; ++r) {
-        for (int c = col - 1; c <= col + 1; ++c) {
-            open(r, c);
-        }
-    }
-}
-
-void Board::flag(int row, int col) {
-    if (row >= 0 && row < rows_ && col >= 0 && col < cols_) {
-        grid_[row][col].has_flag_ = !grid_[row][col].has_flag_;
-    }
-}
-
-void Board::print(std::ostream& output_stream) {
-    for (size_t r = 0; r < rows_; ++r) {
-        for (size_t c = 0; c < cols_; ++c) {
-            if (grid_[r][c].is_opened_) {
-                if (grid_[r][c].has_mine_) {
-                    output_stream << "* ";
-                } else {
-                    output_stream << grid_[r][c].mines_count_ << " ";
-                }
-            } else if (grid_[r][c].has_flag_) {
-                output_stream << "F ";
-            } else {
-                output_stream << "# ";
-            }
-        }
-        output_stream << std::endl;
-    }
-}
-
-bool Board::is_winner() {
-    for (size_t r = 0; r < rows_; ++r) {
-        for (size_t c = 0; c < cols_; ++c) {
-            if (!grid_[r][c].is_opened_ && !grid_[r][c].has_mine_) {
-                return false;
-            }
-        }
-    }
-    return true;
+    return 0;
 }
