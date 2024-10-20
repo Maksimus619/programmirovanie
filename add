@@ -1,14 +1,93 @@
-# Makefile
-all: mines
+// Board.cpp
+#include "Board.hpp"
+#include <iostream>
+#include <cstdlib>
 
-mines: Board.o mines.o
-	g++ -o mines Board.o mines.o
+Board::Board(size_t rows, size_t cols, const std::vector<std::pair<int, int>>& mines_coords)
+    : rows_(rows), cols_(cols), grid_(rows, std::vector<Cell>(cols)) {
+    set_mines(mines_coords);
+}
 
-Board.o: Board.cpp Board.hpp
-	g++ -c Board.cpp
+void Board::set_mines(const std::vector<std::pair<int, int>>& mines_coords) {
+    for (const auto& coord : mines_coords) {
+        int row = coord.first; // Убрать const, если не нужно
+        int col = coord.second; // Убрать const, если не нужно
+        if (row < rows_ && col < cols_) {
+            grid_[row][col].has_mine_ = true;
+        }
+    }
+}
 
-mines.o: mines.cpp Board.hpp
-	g++ -c mines.cpp
+int Board::count_mines_around(int row, int col) {
+    int count = 0;
+    for (int r = row - 1; r <= row + 1; ++r) {
+        for (int c = col - 1; c <= col + 1; ++c) {
+            if (r >= 0 && r < rows_ && c >= 0 && c < cols_ && grid_[r][c].has_mine_) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
 
-clean:
-	rm -f *.o mines
+void Board::open(int row, int col) {
+    if (row < 0 || row >= rows_ || col < 0 || col >= cols_ || grid_[row][col].is_opened_) {
+        return;
+    }
+
+    grid_[row][col].is_opened_ = true;
+
+    if (grid_[row][col].has_mine_) {
+        std::cout << "You lose!\n"; // Изменение здесь
+        return;
+    }
+
+    grid_[row][col].mines_count_ = count_mines_around(row, col);
+    if (grid_[row][col].mines_count_ == 0) {
+        reveal_adjacent_cells(row, col);
+    }
+}
+
+void Board::reveal_adjacent_cells(int row, int col) {
+    for (int r = row - 1; r <= row + 1; ++r) {
+        for (int c = col - 1; c <= col + 1; ++c) {
+            open(r, c);
+        }
+    }
+}
+
+void Board::flag(int row, int col) {
+    if (row >= 0 && row < rows_ && col >= 0 && col < cols_) {
+        grid_[row][col].has_flag_ = !grid_[row][col].has_flag_;
+    }
+}
+
+void Board::print(std::ostream& output_stream) {
+    for (size_t r = 0; r < rows_; ++r) {
+        for (size_t c = 0; c < cols_; ++c) {
+            if (grid_[r][c].is_opened_) {
+                if (grid_[r][c].has_mine_) {
+                    output_stream << "* ";
+                } else {
+                    output_stream << grid_[r][c].mines_count_ << " ";
+                }
+            } else if (grid_[r][c].has_flag_) {
+                output_stream << "F ";
+            } else {
+                output_stream << "# ";
+            }
+        }
+        output_stream << "\n"; // Изменение здесь
+    }
+}
+
+bool Board::is_winner() {
+    for (size_t r = 0; r < rows_; ++r) {
+        for (size_t c = 0; c < cols_; ++c) {
+            if (!grid_[r][c].is_opened_ && !grid_[r][c].has_mine_) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
