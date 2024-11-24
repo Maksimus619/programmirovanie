@@ -1,93 +1,151 @@
-// Board.cpp
-#include "Board.hpp"
 #include <iostream>
-#include <cstdlib>
+#include <vector>
+#include <memory>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <stdexcept>
 
-Board::Board(size_t rows, size_t cols, const std::vector<std::pair<int, int>>& mines_coords)
-    : rows_(rows), cols_(cols), grid_(rows, std::vector<Cell>(cols)) {
-    set_mines(mines_coords);
-}
-
-void Board::set_mines(const std::vector<std::pair<int, int>>& mines_coords) {
-    for (const auto& coord : mines_coords) {
-        int row = coord.first; // Убрать const, если не нужно
-        int col = coord.second; // Убрать const, если не нужно
-        if (row < rows_ && col < cols_) {
-            grid_[row][col].has_mine_ = true;
-        }
+// Базовый класс Expression
+class Expression {
+public:
+    virtual ~Expression() = default;
+    virtual double eval() const = 0;
+    void add_operand(std::shared_ptr<Expression> operand) {
+        operands.push_back(operand);
     }
-}
 
-int Board::count_mines_around(int row, int col) {
-    int count = 0;
-    for (int r = row - 1; r <= row + 1; ++r) {
-        for (int c = col - 1; c <= col + 1; ++c) {
-            if (r >= 0 && r < rows_ && c >= 0 && c < cols_ && grid_[r][c].has_mine_) {
-                count++;
+protected:
+    std::vector<std::shared_ptr<Expression>> operands;
+};
+
+// Класс для числовых значений
+class Number : public Expression {
+public:
+    explicit Number(double value) : value(value) {}
+    double eval() const override {
+        return value;
+    }
+
+private:
+    double value;
+};
+
+// Класс для сложения
+class Add : public Expression {
+public:
+    double eval() const override {
+        double sum = 0;
+        for (const auto& operand : operands) {
+            sum += operand->eval();
+        }
+        return sum;
+    }
+};
+
+// Класс для вычитания
+class Sub : public Expression {
+public:
+    double eval() const override {
+        if (operands.empty()) return 0;
+        double result = operands[0]->eval();
+        for (size_t i = 1; i < operands.size(); ++i) {
+            result -= operands[i]->eval();
+        }
+        return result;
+    }
+};
+
+// Класс для умножения
+class Mul : public Expression {
+public:
+    double eval() const override {
+        if (operands.empty()) return 1;
+        double result = 1;
+        for (const auto& operand : operands) {
+            result *= operand->eval();
+        }
+        return result;
+    }
+};
+
+// Класс для деления
+class Div : public Expression {
+public:
+    double eval() const override {
+        if (operands.empty()) throw std::runtime_error("Division by zero");
+        double result = operands[0]->eval();
+        for (size_t i = 1; i < operands.size(); ++i) {
+            double divisor = operands[i]->eval();
+            if (divisor == 0) throw std::runtime_error("Division by zero");
+            result /= divisor;
+        }
+        return result;
+    }
+};
+
+// Класс для некорректного выражения
+class Invalid : public Expression {
+public:
+    double eval() const override {
+        throw std::runtime_error("Invalid expression");
+    }
+};
+
+// Парсер выражений
+std::shared_ptr<Expression> parse_expression(const std::string& input) {
+    std::vector<std::shared_ptr<Expression>> expressions;
+    std::vector<size_t> fold_indices;
+
+    std::istringstream stream(input);
+    char ch;
+    while (stream >> ch) {
+        if (ch == '(') {
+            char op;
+            stream >> op;
+            std::shared_ptr<Expression> expr;
+            switch (op) {
+                case '+': expr = std::make_shared<Add>(); break;
+                case '-': expr = std::make_shared<Sub>(); break;
+                case '*': expr = std::make_shared<Mul>(); break;
+                case '/': expr = std::make_shared<Div>(); break;
+                default: expr = std::make_shared<Invalid>(); break;
             }
-        }
-    }
-    return count;
-}
-
-void Board::open(int row, int col) {
-    if (row < 0 || row >= rows_ || col < 0 || col >= cols_ || grid_[row][col].is_opened_) {
-        return;
-    }
-
-    grid_[row][col].is_opened_ = true;
-
-    if (grid_[row][col].has_mine_) {
-        std::cout << "You lose!\n"; // Изменение здесь
-        return;
-    }
-
-    grid_[row][col].mines_count_ = count_mines_around(row, col);
-    if (grid_[row][col].mines_count_ == 0) {
-        reveal_adjacent_cells(row, col);
-    }
-}
-
-void Board::reveal_adjacent_cells(int row, int col) {
-    for (int r = row - 1; r <= row + 1; ++r) {
-        for (int c = col - 1; c <= col + 1; ++c) {
-            open(r, c);
-        }
-    }
-}
-
-void Board::flag(int row, int col) {
-    if (row >= 0 && row < rows_ && col >= 0 && col < cols_) {
-        grid_[row][col].has_flag_ = !grid_[row][col].has_flag_;
-    }
-}
-
-void Board::print(std::ostream& output_stream) {
-    for (size_t r = 0; r < rows_; ++r) {
-        for (size_t c = 0; c < cols_; ++c) {
-            if (grid_[r][c].is_opened_) {
-                if (grid_[r][c].has_mine_) {
-                    output_stream << "* ";
-                } else {
-                    output_stream << grid_[r][c].mines_count_ << " ";
-                }
-            } else if (grid_[r][c].has_flag_) {
-                output_stream << "F ";
-            } else {
-                output_stream << "# ";
+            expressions.push_back(expr);
+            fold_indices.push_back(expressions.size() - 1);
+        } else if (ch == ')') {
+            if (fold_indices.empty()) return std::make_shared<Invalid>();
+            size_t idx = fold_indices.back();
+            fold_indices.pop_back();
+            auto& expr = expressions[idx];
+            for (size_t i = idx + 1; i < expressions.size(); ++i) {
+                expr->add_operand(expressions[i]);
             }
+            expressions.resize(idx + 1);
+        } else if (std::isdigit(ch) || ch == '.' || ch == '-') {
+            stream.putback(ch);
+            double value;
+            stream >> value;
+            expressions.push_back(std::make_shared<Number>(value));
+        } else {
+            return std::make_shared<Invalid>();
         }
-        output_stream << "\n"; // Изменение здесь
     }
+
+    if (expressions.size() == 1) return expressions[0];
+    return std::make_shared<Invalid>();
 }
 
-bool Board::is_winner() {
-    for (size_t r = 0; r < rows_; ++r) {
-        for (size_t c = 0; c < cols_; ++c) {
-            if (!grid_[r][c].is_opened_ && !grid_[r][c].has_mine_) {
-                return false;
-            }
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        try {
+            auto expr = parse_expression(line);
+            double result = expr->eval();
+            std::cout << std::fixed << std::setprecision(4) << result << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "nan" << std::endl;
         }
     }
-    return true;
+    return 0;
 }
