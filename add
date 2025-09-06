@@ -1,78 +1,107 @@
-## 1. **Поиск идентификаторов C++** (`identifiers.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b[a-zA-Z_][a-zA-Z0-9_]*\b' folly/*.cpp
-```
-**Описание:**  
-- Поиск всех C++ идентификаторов, состоящих из букв, цифр и `_`, но не начинающихся с цифры.
+namespace ValeraProject.Models
+{
+    public class Valera
+    {
+        public int Health { get; private set; } = 100;
+        public int Mana { get; private set; } = 0; // Алкоголь в крови
+        public int Cheerfulness { get; private set; } = 0; // Жизнерадостность
+        public int Fatigue { get; private set; } = 0; // Усталость
+        public int Money { get; private set; } = 100;
 
----
+        private const int MinHealth = 0;
+        private const int MaxHealth = 100;
+        private const int MinMana = 0;
+        private const int MaxMana = 100;
+        private const int MinCheerfulness = -10;
+        private const int MaxCheerfulness = 10;
+        private const int MinFatigue = 0;
+        private const int MaxFatigue = 100;
 
-## 2. **Поиск целочисленных литералов (с поддержкой суффиксов и одинарной кавычки)** (`integer_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b[0-9]([0-9']*[0-9])?[uUlLzZ]*\b' folly/*.cpp
-```
-**Описание:**  
-- Поддержка суффиксов `U, L, LL, Z` в любом регистре.  
-- Поддержка `'` для разделения цифр.
+        public bool GoToWork()
+        {
+            if (Mana >= 50 || Fatigue >= 10)
+                return false;
 
----
+            Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 5);
+            Mana = Math.Min(MaxMana, Mana + 30);
+            Money += 100;
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 70);
+            return true;
+        }
 
-## 3. **Поиск десятичных литералов** (`decimal_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b[1-9][0-9']*\b' folly/*.cpp
-```
-**Описание:**  
-- Десятичные числа (не начинаются с `0`), возможны разделители `'`.
+        public void ContemplateNature()
+        {
+            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
+            Mana = Math.Max(MinMana, Mana - 10);
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 10);
+        }
 
----
+        public void DrinkWineAndWatchTV()
+        {
+            Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 1);
+            Mana = Math.Min(MaxMana, Mana + 30);
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 10);
+            Health = Math.Max(MinHealth, Health - 5);
+            Money = Math.Max(0, Money - 20);
+        }
 
-## 4. **Поиск восьмеричных литералов** (`octal_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b0[0-7][0-7']*\b' folly/*.cpp
-```
-**Описание:**  
-- Восьмеричные числа начинаются с `0` и содержат только `0-7`.  
+        public void GoToBar()
+        {
+            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
+            Mana = Math.Min(MaxMana, Mana + 60);
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 40);
+            Health = Math.Max(MinHealth, Health - 10);
+            Money = Math.Max(0, Money - 100);
+        }
 
----
+        public void DrinkWithMarginals()
+        {
+            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 5);
+            Health = Math.Max(MinHealth, Health - 80);
+            Mana = Math.Min(MaxMana, Mana + 90);
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 80);
+            Money = Math.Max(0, Money - 150);
+        }
 
-## 5. **Поиск шестнадцатеричных литералов** (`hex_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b0[xX][0-9a-fA-F][0-9a-fA-F']*\b' folly/*.cpp
-```
-**Описание:**  
-- Шестнадцатеричные числа начинаются с `0x` или `0X`, далее идут `0-9, a-f, A-F`, возможны `'`.
+        public void SingInMetro()
+        {
+            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
+            Mana = Math.Min(MaxMana, Mana + 10);
+            
+            int earnings = 10;
+            if (Mana > 40 && Mana < 70)
+            {
+                earnings += 50;
+            }
+            Money += earnings;
+            
+            Fatigue = Math.Min(MaxFatigue, Fatigue + 20);
+        }
 
----
+        public void Sleep()
+        {
+            if (Mana < 30)
+            {
+                Health = Math.Min(MaxHealth, Health + 90);
+            }
+            
+            if (Mana > 70)
+            {
+                Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 3);
+            }
+            
+            Mana = Math.Max(MinMana, Mana - 50);
+            Fatigue = Math.Max(MinFatigue, Fatigue - 70);
+        }
 
-## 6. **Поиск чисел с плавающей точкой** (`floating_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '\b[0-9]+(\.[0-9]*)?(e[-+]?[0-9]+)?[fFlL]?\b' folly/*.cpp
-```
-**Описание:**  
-- Числа вида `12.34`, `1e10`, `2.5f`, поддержка `e`-нотации.
-
----
-
-## 7. **Поиск строковых литералов** (`string_literals.sh`)
-```sh
-#!/bin/bash
-grep -E -o '"([^"\\]|\\.)*"' folly/*.cpp
-```
-**Описание:**  
-- Обнаружение строковых литералов `"..."` с поддержкой экранирования.
-
----
-
-## 8. **Поиск директив препроцессора** (`preprocessor.sh`)
-```sh
-#!/bin/bash
-grep -E -o '^\s*#\s*[a-zA-Z_]+' folly/*.cpp
-```
-**Описание:**  
-- Директивы вида `#include`, `#define`, `#ifdef` и т. д.
+        // Метод для сброса состояния (для тестов)
+        public void Reset()
+        {
+            Health = 100;
+            Mana = 0;
+            Cheerfulness = 0;
+            Fatigue = 0;
+            Money = 100;
+        }
+    }
+}
