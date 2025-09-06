@@ -1,23 +1,100 @@
 using ValeraProject.Models;
+using Xunit;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace ValeraProject.Tests
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    public class ValeraTests
+    {
+        [Fact]
+        public void GoToWork_Success_WhenConditionsMet()
+        {
+            // Arrange
+            var valera = new Valera();
+            
+            // Act
+            var result = valera.GoToWork();
+            
+            // Assert
+            Assert.True(result);
+            Assert.Equal(95, valera.Cheerfulness);
+            Assert.Equal(30, valera.Mana);
+            Assert.Equal(200, valera.Money);
+            Assert.Equal(70, valera.Fatigue);
+        }
+
+        [Fact]
+        public void GoToWork_Fails_WhenManaTooHigh()
+        {
+            // Arrange
+            var valera = new Valera();
+            valera.DrinkWineAndWatchTV(); // Увеличиваем ману
+            
+            // Act
+            var result = valera.GoToWork();
+            
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ContemplateNature_IncreasesCheerfulness()
+        {
+            // Arrange
+            var valera = new Valera();
+            
+            // Act
+            valera.ContemplateNature();
+            
+            // Assert
+            Assert.Equal(1, valera.Cheerfulness);
+            Assert.Equal(0, valera.Mana); // Не может быть меньше 0
+            Assert.Equal(10, valera.Fatigue);
+        }
+
+        [Fact]
+        public void DrinkWineAndWatchTV_DecreasesHealthAndMoney()
+        {
+            // Arrange
+            var valera = new Valera();
+            int initialMoney = valera.Money;
+            
+            // Act
+            valera.DrinkWineAndWatchTV();
+            
+            // Assert
+            Assert.Equal(95, valera.Health);
+            Assert.Equal(initialMoney - 20, valera.Money);
+            Assert.Equal(29, valera.Mana); // 0 + 30 - 1? Нет, изначально 0 + 30 = 30
+            Assert.Equal(10, valera.Fatigue);
+        }
+
+        [Fact]
+        public void SingInMetro_ExtraMoney_WhenManaInRange()
+        {
+            // Arrange
+            var valera = new Valera();
+            valera.DrinkWineAndWatchTV(); // Мана = 30
+            valera.DrinkWineAndWatchTV(); // Мана = 60 (в диапазоне 40-70)
+            
+            // Act
+            valera.SingInMetro();
+            
+            // Assert
+            Assert.Equal(100 + 10 + 50 - 40, valera.Money); // 100 - 20*2 + 60
+        }
+
+        [Fact]
+        public void Sleep_RecoversHealth_WhenManaLow()
+        {
+            // Arrange
+            var valera = new Valera();
+            valera.Health = 50;
+            
+            // Act
+            valera.Sleep();
+            
+            // Assert
+            Assert.Equal(100, valera.Health); // 50 + 90, но не более 100
+        }
+    }
 }
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
-
-app.Run();
