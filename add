@@ -1,107 +1,23 @@
-namespace ValeraProject.Models
+using ValeraProject.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
-    public class Valera
-    {
-        public int Health { get; private set; } = 100;
-        public int Mana { get; private set; } = 0; // Алкоголь в крови
-        public int Cheerfulness { get; private set; } = 0; // Жизнерадостность
-        public int Fatigue { get; private set; } = 0; // Усталость
-        public int Money { get; private set; } = 100;
-
-        private const int MinHealth = 0;
-        private const int MaxHealth = 100;
-        private const int MinMana = 0;
-        private const int MaxMana = 100;
-        private const int MinCheerfulness = -10;
-        private const int MaxCheerfulness = 10;
-        private const int MinFatigue = 0;
-        private const int MaxFatigue = 100;
-
-        public bool GoToWork()
-        {
-            if (Mana >= 50 || Fatigue >= 10)
-                return false;
-
-            Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 5);
-            Mana = Math.Min(MaxMana, Mana + 30);
-            Money += 100;
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 70);
-            return true;
-        }
-
-        public void ContemplateNature()
-        {
-            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
-            Mana = Math.Max(MinMana, Mana - 10);
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 10);
-        }
-
-        public void DrinkWineAndWatchTV()
-        {
-            Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 1);
-            Mana = Math.Min(MaxMana, Mana + 30);
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 10);
-            Health = Math.Max(MinHealth, Health - 5);
-            Money = Math.Max(0, Money - 20);
-        }
-
-        public void GoToBar()
-        {
-            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
-            Mana = Math.Min(MaxMana, Mana + 60);
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 40);
-            Health = Math.Max(MinHealth, Health - 10);
-            Money = Math.Max(0, Money - 100);
-        }
-
-        public void DrinkWithMarginals()
-        {
-            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 5);
-            Health = Math.Max(MinHealth, Health - 80);
-            Mana = Math.Min(MaxMana, Mana + 90);
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 80);
-            Money = Math.Max(0, Money - 150);
-        }
-
-        public void SingInMetro()
-        {
-            Cheerfulness = Math.Min(MaxCheerfulness, Cheerfulness + 1);
-            Mana = Math.Min(MaxMana, Mana + 10);
-            
-            int earnings = 10;
-            if (Mana > 40 && Mana < 70)
-            {
-                earnings += 50;
-            }
-            Money += earnings;
-            
-            Fatigue = Math.Min(MaxFatigue, Fatigue + 20);
-        }
-
-        public void Sleep()
-        {
-            if (Mana < 30)
-            {
-                Health = Math.Min(MaxHealth, Health + 90);
-            }
-            
-            if (Mana > 70)
-            {
-                Cheerfulness = Math.Max(MinCheerfulness, Cheerfulness - 3);
-            }
-            
-            Mana = Math.Max(MinMana, Mana - 50);
-            Fatigue = Math.Max(MinFatigue, Fatigue - 70);
-        }
-
-        // Метод для сброса состояния (для тестов)
-        public void Reset()
-        {
-            Health = 100;
-            Mana = 0;
-            Cheerfulness = 0;
-            Fatigue = 0;
-            Money = 100;
-        }
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
