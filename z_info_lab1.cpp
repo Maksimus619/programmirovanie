@@ -1,9 +1,7 @@
 #include <iostream>
 #include <random>
-#include <chrono>
 #include <utility>
 
-// 1) Функция быстрого возведения в степень по модулю
 long long fast_power_mod(long long a, long long x, long long p) {
     long long result = 1;
     a = a % p;
@@ -19,7 +17,6 @@ long long fast_power_mod(long long a, long long x, long long p) {
     return result;
 }
 
-// 2) Функция теста простоты Ферма
 bool fermat_primality_test(long long n, int k = 5) {
     if (n <= 1 || n == 4) return false;
     if (n <= 3) return true;
@@ -38,7 +35,6 @@ bool fermat_primality_test(long long n, int k = 5) {
     return true;
 }
 
-// 3) Функция расширенного алгоритма Евклида
 std::pair<long long, std::pair<long long, long long>> extended_euclidean(long long a, long long b) {
     if (b == 0) {
         return {a, {1, 0}};
@@ -55,7 +51,6 @@ std::pair<long long, std::pair<long long, long long>> extended_euclidean(long lo
     return {gcd, {x, y}};
 }
 
-// Функция для генерации случайного числа в диапазоне
 long long generate_random(long long min, long long max) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -63,7 +58,6 @@ long long generate_random(long long min, long long max) {
     return dis(gen);
 }
 
-// Функция для генерации простого числа
 long long generate_prime(long long min, long long max) {
     long long candidate;
     do {
@@ -72,7 +66,7 @@ long long generate_prime(long long min, long long max) {
     return candidate;
 }
 
-// Основная функция с меню
+
 int main() {
     int choice;
 
