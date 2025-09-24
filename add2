@@ -1,59 +1,25 @@
-#include <iostream>
-#include <iomanip>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
 
-class TimeSpan {
-public:
-    int days, hours, minutes, seconds;
-    
-    TimeSpan(int d, int h, int m, int s) : days(d), hours(h), minutes(m), seconds(s) {}
-    
-    TimeSpan operator+(const TimeSpan& other) const {
-        return TimeSpan(days + other.days, hours + other.hours, minutes + other.minutes, seconds + other.seconds);
-    }
-    
-    TimeSpan operator-(const TimeSpan& other) const {
-        return TimeSpan(days - other.days, hours - other.hours, minutes - other.minutes, seconds - other.seconds);
-    }
-    
-    friend std::ostream& operator<<(std::ostream& os, const TimeSpan& ts) {
-        os << ts.days << "d " << ts.hours << "h " << ts.minutes << "m " << ts.seconds << "s";
-        return os;
-    }
-};
+#define LED GPIO_NUM_32
+#define RELAY GPIO_NUM_33
 
-class Time {
-public:
-    int hours, minutes, seconds;
-    
-    Time(int h, int m, int s) : hours(h), minutes(m), seconds(s) {}
-    
-    Time operator+(const TimeSpan& ts) const {
-        return Time(hours + ts.hours, minutes + ts.minutes, seconds + ts.seconds);
-    }
-    
-    TimeSpan operator-(const Time& other) const {
-        return TimeSpan(0, hours - other.hours, minutes - other.minutes, seconds - other.seconds);
-    }
-    
-    friend std::ostream& operator<<(std::ostream& os, const Time& t) {
-        os << std::setw(2) << std::setfill('0') << t.hours << ":"
-           << std::setw(2) << std::setfill('0') << t.minutes << ":"
-           << std::setw(2) << std::setfill('0') << t.seconds;
-        return os;
-    }
-};
+void app_main(void)
+{
+  gpio_set_direction(LED, GPIO_MODE_OUTPUT);
+  gpio_set_direction(RELAY, GPIO_MODE_INPUT_OUTPUT);
 
-int main() {
-    Time t1(14, 30, 0);
-    Time t2(12, 15, 45);
-    TimeSpan span(0, 2, 30, 0);
+  uint32_t ticks = 0;
+  while (true)
+  {
+        // Определяем частоту мигания в зависимости от состояния реле
+    int divider = gpio_get_level(RELAY) ? 2 : 10; // 5 Гц или 1 Гц
+    gpio_set_level(LED, (ticks % divider) == 0);
+    if (ticks % 100 == 0)
+      gpio_set_level(RELAY, !gpio_get_level(RELAY));
     
-    std::cout << "Time 1: " << t1 << "\n";
-    std::cout << "Time 2: " << t2 << "\n";
-    std::cout << "Span: " << span << "\n";
-    
-    std::cout << "Difference: " << (t1 - t2) << "\n";
-    std::cout << "Time 1 + Span: " << (t1 + span) << "\n";
-    
-    return 0;
+    ticks++;
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
 }
