@@ -25,21 +25,7 @@
       "left": 96,
       "attrs": { "color": "green", "xray": "1" }
     },
-    { "type": "wokwi-mpu6050", "id": "imu1", "top": 128.62, "left": -199.28, "attrs": {} },
-    {
-      "type": "wokwi-resistor",
-      "id": "r1",
-      "top": -188.05,
-      "left": -211.2,
-      "attrs": { "value": "1000" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r2",
-      "top": -149.65,
-      "left": -201.6,
-      "attrs": { "value": "1000" }
-    }
+    { "type": "wokwi-mpu6050", "id": "imu1", "top": 128.62, "left": -199.28, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -53,7 +39,11 @@
     [ "rtc1:GND", "esp:GND.2", "black", [ "h0" ] ],
     [ "rtc1:5V", "esp:5V", "red", [ "h0" ] ],
     [ "btn1:2.l", "esp:0", "green", [ "h0" ] ],
-    [ "btn1:1.r", "esp:GND.1", "green", [ "v0" ] ]
+    [ "btn1:1.r", "esp:GND.1", "green", [ "v0" ] ],
+    [ "imu1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "imu1:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "imu1:SCL", "esp:22", "green", [ "v0" ] ],
+    [ "imu1:SDA", "esp:21", "green", [ "v0" ] ]
   ],
   "dependencies": {}
 }
