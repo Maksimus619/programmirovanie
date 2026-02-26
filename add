@@ -1,76 +1,267 @@
-{
-"version": 1,
-"author": "Anonymous maker",
-"editor": "wokwi",
-"parts": [
-    {
-      "type": "board-esp32-devkit-c-v4",
-      "id": "esp",
-      "top": 0,
-      "left": 0,
-      "attrs": { "builder": "esp-idf" }
-    },
-    {
-      "type": "board-ssd1306",
-      "id": "oled1",
-      "top": -44.86,
-      "left": -191.77,
-      "attrs": { "i2cAddress": "0x3c" }
-    },
-    { "type": "wokwi-ds1307", "id": "rtc1", "top": -139.8, "left": 9.7, "attrs": {} },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": 236.6,
-      "left": 96,
-      "attrs": { "color": "green", "xray": "1" }
-    },
-    { "type": "wokwi-mpu6050", "id": "imu1", "top": 128.62, "left": -199.28, "attrs": {} },
-    {
-      "type": "wokwi-resistor",
-      "id": "pullup1",
-      "top": -80,
-      "left": -120,
-      "attrs": { "value": "10000", "resistance": "10k" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "pullup2",
-      "top": -60,
-      "left": -120,
-      "attrs": { "value": "10000", "resistance": "10k" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "pullup3",
-      "top": -40,
-      "left": -120,
-      "attrs": { "value": "4700", "resistance": "4.7k" }
+#include <iostream>
+#include <vector>
+#include <random>
+#include <algorithm>
+#include <set>
+#include <iomanip>
+
+class LotterySimulator {
+private:
+    std::vector<int> winningNumbers1;  // Выигрышные числа для первого поля
+    std::vector<int> winningNumbers2;  // Выигрышные числа для второго поля
+    std::vector<int> myNumbers;        // Мои числа (фиксированные)
+    std::mt19937 gen;                  // Генератор случайных чисел
+    
+public:
+    LotterySimulator() : gen(std::random_device{}()) {
+        // Устанавливаем мои фиксированные числа
+        myNumbers = {4, 7, 12, 20};
+        std::sort(myNumbers.begin(), myNumbers.end());
+        
+        // Генерируем выигрышные комбинации
+        generateWinningCombination();
     }
-  ],
-"connections": [
-[ "esp:TX", "$serialMonitor:RX", "", [] ],
-[ "esp:RX", "$serialMonitor:TX", "", [] ],
-[ "oled1:SCL", "esp:22", "green", [ "v0" ] ],
-[ "oled1:SDA", "esp:21", "green", [ "v0" ] ],
-[ "rtc1:SCL", "esp:22", "green", [ "h0" ] ],
-[ "rtc1:SDA", "esp:21", "green", [ "h0" ] ],
-[ "oled1:VCC", "esp:3V3", "red", [ "v0" ] ],
-[ "oled1:GND", "esp:GND.2", "black", [ "v0" ] ],
-[ "rtc1:GND", "esp:GND.2", "black", [ "h0" ] ],
-[ "rtc1:5V", "esp:5V", "red", [ "h0" ] ],
-[ "btn1:2.l", "esp:0", "green", [ "h0" ] ],
-[ "btn1:1.r", "esp:GND.1", "green", [ "v0" ] ],
-[ "imu1:VCC", "esp:3V3", "red", [ "v0" ] ],
-[ "imu1:GND", "esp:GND.2", "black", [ "v0" ] ],
-[ "imu1:SCL", "esp:22", "green", [ "v0" ] ],
-[ "imu1:SDA", "esp:21", "green", [ "v0" ] ],
-[ "pullup1:1", "esp:3V3", "red", [ "v0" ] ],
-[ "pullup1:2", "esp:22", "green", [ "v0" ] ],
-[ "pullup2:1", "esp:3V3", "red", [ "v0" ] ],
-[ "pullup2:2", "esp:21", "green", [ "v0" ] ],
-[ "pullup3:1", "esp:3V3", "red", [ "v0" ] ],
-[ "pullup3:2", "esp:0", "green", [ "v0" ] ]
-],
-"dependencies": {}
+    
+    // Генерация выигрышной комбинации
+    void generateWinningCombination() {
+        winningNumbers1 = generateRandomNumbers(1, 20, 4);
+        winningNumbers2 = generateRandomNumbers(1, 20, 4);
+    }
+    
+    // Генерация случайных уникальных чисел в заданном диапазоне
+    std::vector<int> generateRandomNumbers(int min, int max, int count) {
+        std::vector<int> numbers;
+        std::uniform_int_distribution<> dist(min, max);
+        
+        while (numbers.size() < count) {
+            int num = dist(gen);
+            if (std::find(numbers.begin(), numbers.end(), num) == numbers.end()) {
+                numbers.push_back(num);
+            }
+        }
+        
+        std::sort(numbers.begin(), numbers.end());
+        return numbers;
+    }
+    
+    // Проверка совпадений для моих чисел
+    std::pair<int, int> checkMyTicket() {
+        int matches1 = countMatches(myNumbers, winningNumbers1);
+        int matches2 = countMatches(myNumbers, winningNumbers2);
+        return {matches1, matches2};
+    }
+    
+    // Подсчет количества совпадений
+    int countMatches(const std::vector<int>& ticket, const std::vector<int>& winning) {
+        std::set<int> ticketSet(ticket.begin(), ticket.end());
+        std::set<int> winningSet(winning.begin(), winning.end());
+        
+        std::vector<int> intersection;
+        std::set_intersection(ticketSet.begin(), ticketSet.end(),
+                             winningSet.begin(), winningSet.end(),
+                             std::back_inserter(intersection));
+        
+        return intersection.size();
+    }
+    
+    // Моделирование лотереи с моими фиксированными числами
+    void simulate(int maxTickets = 10000000) {
+        std::cout << "Мои числа (всегда одинаковые): ";
+        printNumbers(myNumbers);
+        std::cout << std::endl;
+        
+        int ticketNumber = 0;
+        bool wonAny = false;
+        bool wonBoth = false;
+        
+        std::cout << "Начинаем моделирование...\n" << std::endl;
+        
+        for (int i = 1; i <= maxTickets; i++) {
+            // Генерируем новые выигрышные комбинации для каждого тиража
+            generateWinningCombination();
+            
+            auto [matches1, matches2] = checkMyTicket();
+            
+            // Проверяем выигрыш на одном поле
+            if (!wonAny && (matches1 == 4 || matches2 == 4)) {
+                wonAny = true;
+                ticketNumber = i;
+                std::cout << "\n🎉 ВЫИГРЫШ НА ОДНОМ ПОЛЕ!" << std::endl;
+                std::cout << "Тираж №" << i << std::endl;
+                std::cout << "Мои числа: ";
+                printNumbers(myNumbers);
+                std::cout << "Выигрышная комбинация поле 1: ";
+                printNumbers(winningNumbers1);
+                std::cout << "Выигрышная комбинация поле 2: ";
+                printNumbers(winningNumbers2);
+                std::cout << "Совпадения: поле1=" << matches1 
+                         << ", поле2=" << matches2 << std::endl;
+            }
+            
+            // Проверяем джекпот (оба поля)
+            if (!wonBoth && matches1 == 4 && matches2 == 4) {
+                wonBoth = true;
+                std::cout << "\n🏆 ДЖЕКПОТ! ВЫИГРЫШ НА ОБОИХ ПОЛЯХ!" << std::endl;
+                std::cout << "Тираж №" << i << std::endl;
+                std::cout << "Мои числа: ";
+                printNumbers(myNumbers);
+                std::cout << "Выигрышная комбинация поле 1: ";
+                printNumbers(winningNumbers1);
+                std::cout << "Выигрышная комбинация поле 2: ";
+                printNumbers(winningNumbers2);
+                break;
+            }
+            
+            // Показываем прогресс каждые 100,000 тиражей
+            if (i % 100000 == 0) {
+                std::cout << "Проверено " << i << " тиражей... (текущие совпадения: " 
+                         << matches1 << "/4, " << matches2 << "/4)\r";
+                std::cout.flush();
+            }
+        }
+        
+        // Итоговая статистика
+        std::cout << "\n\n=== ИТОГОВАЯ СТАТИСТИКА ===" << std::endl;
+        if (wonBoth) {
+            std::cout << "✅ Джекпот выигран в тираже №" << ticketNumber << std::endl;
+        } else if (wonAny) {
+            std::cout << "✅ Выигрыш на одном поле в тираже №" << ticketNumber << std::endl;
+            std::cout << "❌ Джекпот не выигран за " << maxTickets << " тиражей" << std::endl;
+        } else {
+            std::cout << "❌ Нет ни одного выигрыша за " << maxTickets << " тиражей" << std::endl;
+        }
+    }
+    
+    // Многократное моделирование для статистики
+    void runMultipleSimulations(int simulationsCount, int maxTicketsPerSim = 1000000) {
+        std::vector<int> winsOne(simulationsCount, 0);
+        std::vector<int> winsBoth(simulationsCount, 0);
+        
+        std::cout << "Мои фиксированные числа: ";
+        printNumbers(myNumbers);
+        std::cout << "Запуск " << simulationsCount << " симуляций (по " 
+                 << maxTicketsPerSim << " тиражей в каждой)..." << std::endl;
+        std::cout << std::endl;
+        
+        for (int sim = 0; sim < simulationsCount; sim++) {
+            for (int ticket = 1; ticket <= maxTicketsPerSim; ticket++) {
+                generateWinningCombination();
+                auto [matches1, matches2] = checkMyTicket();
+                
+                if (winsOne[sim] == 0 && (matches1 == 4 || matches2 == 4)) {
+                    winsOne[sim] = ticket;
+                }
+                
+                if (winsBoth[sim] == 0 && matches1 == 4 && matches2 == 4) {
+                    winsBoth[sim] = ticket;
+                }
+                
+                // Если нашли оба типа выигрыша, можно закончить раньше
+                if (winsOne[sim] > 0 && winsBoth[sim] > 0) {
+                    break;
+                }
+            }
+            
+            // Показываем прогресс
+            if ((sim + 1) % 10 == 0) {
+                std::cout << "Завершено " << (sim + 1) << " симуляций..." << std::endl;
+            }
+        }
+        
+        // Статистика по всем симуляциям
+        std::cout << "\n=== СТАТИСТИКА ПО " << simulationsCount << " СИМУЛЯЦИЯМ ===" << std::endl;
+        std::cout << "Числа: 4, 7, 12, 20 (в каждом поле)" << std::endl;
+        std::cout << std::endl;
+        
+        // Статистика для выигрыша на одном поле
+        double avgOne = 0;
+        int countOneFound = 0;
+        int minOne = maxTicketsPerSim;
+        int maxOne = 0;
+        
+        for (int val : winsOne) {
+            if (val > 0) {
+                avgOne += val;
+                countOneFound++;
+                if (val < minOne) minOne = val;
+                if (val > maxOne) maxOne = val;
+            }
+        }
+        
+        if (countOneFound > 0) {
+            avgOne /= countOneFound;
+            std::cout << "🎯 ВЫИГРЫШ НА ОДНОМ ПОЛЕ (4 совпадения):" << std::endl;
+            std::cout << "  Вероятность: 1 из " << static_cast<int>(avgOne) << " тиражей" << std::endl;
+            std::cout << "  Среднее количество тиражей: " << static_cast<int>(avgOne) << std::endl;
+            std::cout << "  Минимальное количество: " << minOne << std::endl;
+            std::cout << "  Максимальное количество: " << maxOne << std::endl;
+            std::cout << "  Процент симуляций с выигрышем: " 
+                     << std::fixed << std::setprecision(2) 
+                     << (countOneFound * 100.0 / simulationsCount) << "%" << std::endl;
+        } else {
+            std::cout << "❌ Ни одной симуляции с выигрышем на одном поле" << std::endl;
+        }
+        
+        // Статистика для джекпота
+        double avgBoth = 0;
+        int countBothFound = 0;
+        int minBoth = maxTicketsPerSim;
+        int maxBoth = 0;
+        
+        for (int val : winsBoth) {
+            if (val > 0) {
+                avgBoth += val;
+                countBothFound++;
+                if (val < minBoth) minBoth = val;
+                if (val > maxBoth) maxBoth = val;
+            }
+        }
+        
+        std::cout << "\n🏆 ДЖЕКПОТ (4+4 совпадения):" << std::endl;
+        if (countBothFound > 0) {
+            avgBoth /= countBothFound;
+            std::cout << "  Вероятность: 1 из " << static_cast<int>(avgBoth) << " тиражей" << std::endl;
+            std::cout << "  Среднее количество тиражей: " << static_cast<int>(avgBoth) << std::endl;
+            std::cout << "  Минимальное количество: " << minBoth << std::endl;
+            std::cout << "  Максимальное количество: " << maxBoth << std::endl;
+            std::cout << "  Процент симуляций с джекпотом: " 
+                     << std::fixed << std::setprecision(2)
+                     << (countBothFound * 100.0 / simulationsCount) << "%" << std::endl;
+        } else {
+            std::cout << "  ❌ Ни одной симуляции с джекпотом" << std::endl;
+        }
+    }
+    
+    void printNumbers(const std::vector<int>& numbers) {
+        for (size_t i = 0; i < numbers.size(); i++) {
+            std::cout << numbers[i];
+            if (i < numbers.size() - 1) std::cout << ", ";
+        }
+        std::cout << std::endl;
+    }
+};
+
+int main() {
+    std::cout << "==========================================" << std::endl;
+    std::cout << "  МОДЕЛИРОВАНИЕ ЛОТЕРЕИ 4 ИЗ 20" << std::endl;
+    std::cout << "  Фиксированные числа: 4, 7, 12, 20" << std::endl;
+    std::cout << "==========================================" << std::endl;
+    std::cout << std::endl;
+    
+    LotterySimulator simulator;
+    
+    // Режим 1: Одиночная симуляция до выигрыша
+    std::cout << "🔴 РЕЖИМ 1: Поиск первого выигрыша" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
+    simulator.simulate(10000000);  // Максимум 10 миллионов тиражей
+    
+    std::cout << "\n\n" << std::endl;
+    
+    // Режим 2: Статистический анализ
+    std::cout << "📊 РЕЖИМ 2: Статистический анализ (может занять некоторое время)" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
+    LotterySimulator statsSimulator;
+    statsSimulator.runMultipleSimulations(100, 5000000);  // 100 симуляций по 5 млн тиражей
+    
+    return 0;
 }
