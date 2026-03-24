@@ -1,267 +1,58 @@
-#include <iostream>
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <set>
-#include <iomanip>
+О чем эта работа
 
-class LotterySimulator {
-private:
-    std::vector<int> winningNumbers1;  // Выигрышные числа для первого поля
-    std::vector<int> winningNumbers2;  // Выигрышные числа для второго поля
-    std::vector<int> myNumbers;        // Мои числа (фиксированные)
-    std::mt19937 gen;                  // Генератор случайных чисел
-    
-public:
-    LotterySimulator() : gen(std::random_device{}()) {
-        // Устанавливаем мои фиксированные числа
-        myNumbers = {4, 7, 12, 20};
-        std::sort(myNumbers.begin(), myNumbers.end());
-        
-        // Генерируем выигрышные комбинации
-        generateWinningCombination();
-    }
-    
-    // Генерация выигрышной комбинации
-    void generateWinningCombination() {
-        winningNumbers1 = generateRandomNumbers(1, 20, 4);
-        winningNumbers2 = generateRandomNumbers(1, 20, 4);
-    }
-    
-    // Генерация случайных уникальных чисел в заданном диапазоне
-    std::vector<int> generateRandomNumbers(int min, int max, int count) {
-        std::vector<int> numbers;
-        std::uniform_int_distribution<> dist(min, max);
-        
-        while (numbers.size() < count) {
-            int num = dist(gen);
-            if (std::find(numbers.begin(), numbers.end(), num) == numbers.end()) {
-                numbers.push_back(num);
-            }
-        }
-        
-        std::sort(numbers.begin(), numbers.end());
-        return numbers;
-    }
-    
-    // Проверка совпадений для моих чисел
-    std::pair<int, int> checkMyTicket() {
-        int matches1 = countMatches(myNumbers, winningNumbers1);
-        int matches2 = countMatches(myNumbers, winningNumbers2);
-        return {matches1, matches2};
-    }
-    
-    // Подсчет количества совпадений
-    int countMatches(const std::vector<int>& ticket, const std::vector<int>& winning) {
-        std::set<int> ticketSet(ticket.begin(), ticket.end());
-        std::set<int> winningSet(winning.begin(), winning.end());
-        
-        std::vector<int> intersection;
-        std::set_intersection(ticketSet.begin(), ticketSet.end(),
-                             winningSet.begin(), winningSet.end(),
-                             std::back_inserter(intersection));
-        
-        return intersection.size();
-    }
-    
-    // Моделирование лотереи с моими фиксированными числами
-    void simulate(int maxTickets = 10000000) {
-        std::cout << "Мои числа (всегда одинаковые): ";
-        printNumbers(myNumbers);
-        std::cout << std::endl;
-        
-        int ticketNumber = 0;
-        bool wonAny = false;
-        bool wonBoth = false;
-        
-        std::cout << "Начинаем моделирование...\n" << std::endl;
-        
-        for (int i = 1; i <= maxTickets; i++) {
-            // Генерируем новые выигрышные комбинации для каждого тиража
-            generateWinningCombination();
-            
-            auto [matches1, matches2] = checkMyTicket();
-            
-            // Проверяем выигрыш на одном поле
-            if (!wonAny && (matches1 == 4 || matches2 == 4)) {
-                wonAny = true;
-                ticketNumber = i;
-                std::cout << "\n🎉 ВЫИГРЫШ НА ОДНОМ ПОЛЕ!" << std::endl;
-                std::cout << "Тираж №" << i << std::endl;
-                std::cout << "Мои числа: ";
-                printNumbers(myNumbers);
-                std::cout << "Выигрышная комбинация поле 1: ";
-                printNumbers(winningNumbers1);
-                std::cout << "Выигрышная комбинация поле 2: ";
-                printNumbers(winningNumbers2);
-                std::cout << "Совпадения: поле1=" << matches1 
-                         << ", поле2=" << matches2 << std::endl;
-            }
-            
-            // Проверяем джекпот (оба поля)
-            if (!wonBoth && matches1 == 4 && matches2 == 4) {
-                wonBoth = true;
-                std::cout << "\n🏆 ДЖЕКПОТ! ВЫИГРЫШ НА ОБОИХ ПОЛЯХ!" << std::endl;
-                std::cout << "Тираж №" << i << std::endl;
-                std::cout << "Мои числа: ";
-                printNumbers(myNumbers);
-                std::cout << "Выигрышная комбинация поле 1: ";
-                printNumbers(winningNumbers1);
-                std::cout << "Выигрышная комбинация поле 2: ";
-                printNumbers(winningNumbers2);
-                break;
-            }
-            
-            // Показываем прогресс каждые 100,000 тиражей
-            if (i % 100000 == 0) {
-                std::cout << "Проверено " << i << " тиражей... (текущие совпадения: " 
-                         << matches1 << "/4, " << matches2 << "/4)\r";
-                std::cout.flush();
-            }
-        }
-        
-        // Итоговая статистика
-        std::cout << "\n\n=== ИТОГОВАЯ СТАТИСТИКА ===" << std::endl;
-        if (wonBoth) {
-            std::cout << "✅ Джекпот выигран в тираже №" << ticketNumber << std::endl;
-        } else if (wonAny) {
-            std::cout << "✅ Выигрыш на одном поле в тираже №" << ticketNumber << std::endl;
-            std::cout << "❌ Джекпот не выигран за " << maxTickets << " тиражей" << std::endl;
-        } else {
-            std::cout << "❌ Нет ни одного выигрыша за " << maxTickets << " тиражей" << std::endl;
-        }
-    }
-    
-    // Многократное моделирование для статистики
-    void runMultipleSimulations(int simulationsCount, int maxTicketsPerSim = 1000000) {
-        std::vector<int> winsOne(simulationsCount, 0);
-        std::vector<int> winsBoth(simulationsCount, 0);
-        
-        std::cout << "Мои фиксированные числа: ";
-        printNumbers(myNumbers);
-        std::cout << "Запуск " << simulationsCount << " симуляций (по " 
-                 << maxTicketsPerSim << " тиражей в каждой)..." << std::endl;
-        std::cout << std::endl;
-        
-        for (int sim = 0; sim < simulationsCount; sim++) {
-            for (int ticket = 1; ticket <= maxTicketsPerSim; ticket++) {
-                generateWinningCombination();
-                auto [matches1, matches2] = checkMyTicket();
-                
-                if (winsOne[sim] == 0 && (matches1 == 4 || matches2 == 4)) {
-                    winsOne[sim] = ticket;
-                }
-                
-                if (winsBoth[sim] == 0 && matches1 == 4 && matches2 == 4) {
-                    winsBoth[sim] = ticket;
-                }
-                
-                // Если нашли оба типа выигрыша, можно закончить раньше
-                if (winsOne[sim] > 0 && winsBoth[sim] > 0) {
-                    break;
-                }
-            }
-            
-            // Показываем прогресс
-            if ((sim + 1) % 10 == 0) {
-                std::cout << "Завершено " << (sim + 1) << " симуляций..." << std::endl;
-            }
-        }
-        
-        // Статистика по всем симуляциям
-        std::cout << "\n=== СТАТИСТИКА ПО " << simulationsCount << " СИМУЛЯЦИЯМ ===" << std::endl;
-        std::cout << "Числа: 4, 7, 12, 20 (в каждом поле)" << std::endl;
-        std::cout << std::endl;
-        
-        // Статистика для выигрыша на одном поле
-        double avgOne = 0;
-        int countOneFound = 0;
-        int minOne = maxTicketsPerSim;
-        int maxOne = 0;
-        
-        for (int val : winsOne) {
-            if (val > 0) {
-                avgOne += val;
-                countOneFound++;
-                if (val < minOne) minOne = val;
-                if (val > maxOne) maxOne = val;
-            }
-        }
-        
-        if (countOneFound > 0) {
-            avgOne /= countOneFound;
-            std::cout << "🎯 ВЫИГРЫШ НА ОДНОМ ПОЛЕ (4 совпадения):" << std::endl;
-            std::cout << "  Вероятность: 1 из " << static_cast<int>(avgOne) << " тиражей" << std::endl;
-            std::cout << "  Среднее количество тиражей: " << static_cast<int>(avgOne) << std::endl;
-            std::cout << "  Минимальное количество: " << minOne << std::endl;
-            std::cout << "  Максимальное количество: " << maxOne << std::endl;
-            std::cout << "  Процент симуляций с выигрышем: " 
-                     << std::fixed << std::setprecision(2) 
-                     << (countOneFound * 100.0 / simulationsCount) << "%" << std::endl;
-        } else {
-            std::cout << "❌ Ни одной симуляции с выигрышем на одном поле" << std::endl;
-        }
-        
-        // Статистика для джекпота
-        double avgBoth = 0;
-        int countBothFound = 0;
-        int minBoth = maxTicketsPerSim;
-        int maxBoth = 0;
-        
-        for (int val : winsBoth) {
-            if (val > 0) {
-                avgBoth += val;
-                countBothFound++;
-                if (val < minBoth) minBoth = val;
-                if (val > maxBoth) maxBoth = val;
-            }
-        }
-        
-        std::cout << "\n🏆 ДЖЕКПОТ (4+4 совпадения):" << std::endl;
-        if (countBothFound > 0) {
-            avgBoth /= countBothFound;
-            std::cout << "  Вероятность: 1 из " << static_cast<int>(avgBoth) << " тиражей" << std::endl;
-            std::cout << "  Среднее количество тиражей: " << static_cast<int>(avgBoth) << std::endl;
-            std::cout << "  Минимальное количество: " << minBoth << std::endl;
-            std::cout << "  Максимальное количество: " << maxBoth << std::endl;
-            std::cout << "  Процент симуляций с джекпотом: " 
-                     << std::fixed << std::setprecision(2)
-                     << (countBothFound * 100.0 / simulationsCount) << "%" << std::endl;
-        } else {
-            std::cout << "  ❌ Ни одной симуляции с джекпотом" << std::endl;
-        }
-    }
-    
-    void printNumbers(const std::vector<int>& numbers) {
-        for (size_t i = 0; i < numbers.size(); i++) {
-            std::cout << numbers[i];
-            if (i < numbers.size() - 1) std::cout << ", ";
-        }
-        std::cout << std::endl;
-    }
-};
+Представьте, что у вас есть распределенная вычислительная система — например, большой сервер или кластер из множества компьютеров. Всего в системе N одинаковых машин, но для работы достаточно n из них (n ≤ N). Остальные (N - n) — это "запасные" машины, которые включаются, если основные выходят из строя. Это называется структурной избыточностью.
 
-int main() {
-    std::cout << "==========================================" << std::endl;
-    std::cout << "  МОДЕЛИРОВАНИЕ ЛОТЕРЕИ 4 ИЗ 20" << std::endl;
-    std::cout << "  Фиксированные числа: 4, 7, 12, 20" << std::endl;
-    std::cout << "==========================================" << std::endl;
-    std::cout << std::endl;
-    
-    LotterySimulator simulator;
-    
-    // Режим 1: Одиночная симуляция до выигрыша
-    std::cout << "🔴 РЕЖИМ 1: Поиск первого выигрыша" << std::endl;
-    std::cout << "------------------------------------------" << std::endl;
-    simulator.simulate(10000000);  // Максимум 10 миллионов тиражей
-    
-    std::cout << "\n\n" << std::endl;
-    
-    // Режим 2: Статистический анализ
-    std::cout << "📊 РЕЖИМ 2: Статистический анализ (может занять некоторое время)" << std::endl;
-    std::cout << "------------------------------------------" << std::endl;
-    LotterySimulator statsSimulator;
-    statsSimulator.runMultipleSimulations(100, 5000000);  // 100 симуляций по 5 млн тиражей
-    
-    return 0;
-}
+Задача работы — вычислить два ключевых показателя надежности:
+
+· Θ (среднее время безотказной работы) — сколько в среднем система проработает до того, как количество работающих машин станет меньше n (то есть система откажет)
+· T (среднее время восстановления) — сколько в среднем потребуется времени, чтобы вернуть систему в рабочее состояние после отказа
+
+Параметры системы:
+
+· λ — как часто ломается одна машина
+· μ — как быстро одна ремонтная бригада чинит машину
+· m — сколько всего ремонтных бригад
+
+---
+
+Как работает код
+
+Код моделирует систему как процесс рождения-гибели — это математическая модель, где состояниями является количество работающих машин (от 0 до N).
+
+Главные функции:
+
+1. lambda_l(l, lambda) — интенсивность отказа:
+   · Если работает l машин, каждая может сломаться с интенсивностью λ
+   · Значит, общая интенсивность отказов = l × λ
+2. mu_l(l, N, m, mu) — интенсивность восстановления:
+   · Сломано (N - l) машин
+   · Если бригад m, то одновременно чинится не больше m машин
+   · Значит, интенсивность = min(сломано, m) × μ
+3. mean_time_to_failure() — считает Θ:
+   · Строит систему уравнений для состояний от n (минимально допустимое число работающих машин) до N (все работают)
+   · Решает трехдиагональную систему методом Томаса
+   · Возвращает среднее время, за которое система упадет из состояния "все работают"
+4. mean_time_to_recovery() — считает T:
+   · Аналогично, но для состояний от 0 до n-1
+   · Возвращает время подъема из состояния "работает n-1 машин" до n
+5. solve_tridiagonal() — решает систему уравнений:
+   · Использует эффективный алгоритм для трехдиагональных матриц
+   · Прямой и обратный ход (как в методе прогонки)
+
+Режимы работы:
+
+Программа может работать в двух режимах:
+
+· Одиночный расчет — по 5 параметрам выдает одно значение Θ и T
+· Генерация данных для графиков — по ключевому слову создает таблицы значений для разных параметров
+
+Что мы видим на графиках:
+
+· Θ(n) — чем больше запасных машин (меньше n), тем дольше система живет
+· Θ(λ) — чем реже ломаются машины, тем дольше живет система
+· Θ(μ) — чем быстрее чинят, тем дольше живет
+· Θ(m) — больше ремонтных бригад → быстрее ремонт → дольше живет
+· T(n) — чем больше нужно работающих машин, тем дольше восстанавливаться
+· T(λ) — чем реже ломаются, тем дольше восстанавливаться (парадокс: система реже ломается, но если упала — восстанавливается дольше)
+· T(μ) — чем быстрее чинят, тем быстрее восстановление
+· T(m) — больше бригад → быстрее восстановление
